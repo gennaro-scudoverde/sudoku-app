@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Scudo -->
+  <path d="M256 40 L440 120 V260 C440 360 350 430 256 470 C162 430 72 360 72 260 V120 Z"
+        fill="#2e7d32" stroke="white" stroke-width="12"/>
+
+  <!-- Griglia -->
+  <g stroke="white" stroke-width="2">
+    <!-- verticali -->
+    <line x1="180" y1="160" x2="180" y2="340"/>
+    <line x1="220" y1="160" x2="220" y2="340"/>
+    <line x1="260" y1="160" x2="260" y2="340"/>
+    <line x1="300" y1="160" x2="300" y2="340"/>
+    <line x1="340" y1="160" x2="340" y2="340"/>
+
+    <!-- orizzontali -->
+    <line x1="140" y1="200" x2="380" y2="200"/>
+    <line x1="140" y1="240" x2="380" y2="240"/>
+    <line x1="140" y1="280" x2="380" y2="280"/>
+    <line x1="140" y1="320" x2="380" y2="320"/>
+  </g>
+
+  <!-- evidenziazione centro -->
+  <rect x="240" y="240" width="40" height="40"
+        fill="none" stroke="#cd7f32" stroke-width="4"/>
+</svg>

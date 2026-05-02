@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="manifest" href="manifest.json"> 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 body {
   margin: 0;
@@ -11,6 +11,7 @@ body {
   background: #f4f6f8;
 }
 
+/* GRID */
 #grid {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
@@ -19,36 +20,18 @@ body {
   margin: 20px auto;
 }
 
+/* CELLE */
 .cell {
   width: 100%;
   aspect-ratio: 1;
   border: 1px solid #999;
   box-sizing: border-box;
   position: relative;
-  overflow: hidden;
-}
-button {
-  margin: 5px;
-  padding: 10px 15px;
-  border-radius: 10px;
-  border: 2px solid #888;
-  background: #e6e6a8;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-button:active {
-  background: #d4d48a;
 }
 
 /* BORDI 3x3 */
-.cell:nth-child(3n) {
-  border-right: 3px solid black;
-}
-
-.cell:nth-child(9n+1) {
-  border-left: 3px solid black;
-}
+.cell:nth-child(3n) { border-right: 3px solid black; }
+.cell:nth-child(9n+1) { border-left: 3px solid black; }
 
 .cell:nth-child(n+19):nth-child(-n+27),
 .cell:nth-child(n+46):nth-child(-n+54) {
@@ -62,23 +45,12 @@ button:active {
 /* NOTE */
 .notes {
   position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-
   font-size: 10px;
   color: #c44;
-}
-
-.notes div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* NUMERO GRANDE */
@@ -93,16 +65,24 @@ button:active {
   font-weight: bold;
 }
 
+/* IMPORTANTE */
+.notes, .big {
+  pointer-events: none;
+}
+
 /* EVIDENZIAZIONE */
-.selected {
-  background-color: #ffe9a8;
+.selected { background: #ffe9a8; }
+.highlight { background: #f3f7ff; }
+
+/* BOTTONI */
+button {
+  margin: 5px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 2px solid #888;
+  background: #e6e6a8;
+  font-size: 16px;
 }
-
-.highlight {
-  background-color: #f3f7ff;
-}
-
-
 </style>
 </head>
 
@@ -121,8 +101,6 @@ let controls = document.getElementById("controls");
 let cells = [];
 let selectedIndex = -1;
 let gameOn = true;
-let savedState = null;
-let inTest = false;
 
 /* CREA CELLE */
 for (let i = 0; i < 81; i++) {
@@ -158,32 +136,18 @@ for (let i = 0; i < 81; i++) {
   });
 
   cell.onclick = function() {
-
     selectedIndex = i;
-
-    // 👉 evidenziazione
     highlight(i);
-
-    if (cells[i].fixed) return;
-
-    // cancella numero se riclicchi
-    cells[i].value = null;
-    cells[i].big.innerText = "";
-    cells[i].notes.style.display = "grid";
-
-    recalc();
   };
 
   grid.appendChild(cell);
 }
 
-
 /* HIGHLIGHT */
 function highlight(index) {
 
   cells.forEach(c => {
-    c.el.classList.remove("highlight");
-    c.el.classList.remove("selected");
+    c.el.classList.remove("highlight", "selected");
   });
 
   let row = Math.floor(index / 9);
@@ -208,6 +172,7 @@ function highlight(index) {
 
 /* NUMERINI */
 function recalc() {
+
   cells.forEach(c => {
     for (let n of c.noteEls) n.style.visibility = "visible";
     if (!c.value) c.notes.style.display = "grid";
@@ -216,6 +181,7 @@ function recalc() {
   for (let i = 0; i < 81; i++) {
     let val = cells[i].value;
     if (val) {
+
       cells[i].notes.style.display = "none";
 
       let row = Math.floor(i / 9);
@@ -243,7 +209,8 @@ for (let n = 1; n <= 9; n++) {
   btn.innerText = n;
 
   btn.onclick = function() {
-    if (!gameOn || selectedIndex === -1) return;
+    if (selectedIndex === -1) return;
+
     let c = cells[selectedIndex];
     if (c.fixed) return;
 
@@ -257,107 +224,28 @@ for (let n = 1; n <= 9; n++) {
   controls.appendChild(btn);
 }
 
-/* PROVA */
-function saveState() {
-  return cells.map(c => ({value: c.value}));
-}
+/* PUZZLE BASE */
+let puzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
 
-function restoreState(state) {
+function loadPuzzle() {
   for (let i = 0; i < 81; i++) {
-    cells[i].value = state[i].value;
-    cells[i].big.innerText = state[i].value || "";
-  }
-  recalc();
-}
-
-let provaBtn = document.createElement("button");
-provaBtn.innerText = "PROVA";
-
-provaBtn.onclick = function() {
-  if (!inTest) {
-    savedState = saveState();
-    inTest = true;
-    provaBtn.innerText = "TORNA";
-  } else {
-    restoreState(savedState);
-    inTest = false;
-    provaBtn.innerText = "PROVA";
-  }
-};
-
-/* ON OFF */
-let onBtn = document.createElement("button");
-onBtn.innerText = "ON";
-
-onBtn.onclick = function() {
-  loadGame();
-  gameOn = true;
-};
-
-let offBtn = document.createElement("button");
-offBtn.innerText = "OFF";
-
-offBtn.onclick = function() {
-  saveGame();
-  gameOn = false;
-  alert("Salvato");
-};
-
-controls.appendChild(document.createElement("br"));
-controls.appendChild(onBtn);
-controls.appendChild(provaBtn);
-controls.appendChild(offBtn);
-
-/* PUZZLE */
-let easy = ["530070000600195000098000060800060003400803001700020006060000280000419005000080079"];
-let medium = ["600120384008459072000006005000264030070080006940003000310000050089700000502000190"];
-let hard = ["000000907000420180000705026100904000050000040000507009920108000034059000507000000"];
-
-function loadPuzzle(p) {
-  for (let i = 0; i < 81; i++) {
-    let val = p[i];
+    let val = puzzle[i];
 
     if (val !== "0") {
       cells[i].value = parseInt(val);
       cells[i].big.innerText = val;
       cells[i].fixed = true;
-    } else {
-      cells[i].value = null;
-      cells[i].big.innerText = "";
-      cells[i].fixed = false;
     }
   }
+
   recalc();
 }
-  selectedIndex = -1;
 
-  cells.forEach(c => {
-    c.el.classList.remove("selected", "highlight");
-  });
-
-function addDiff(name, list) {
-  let b = document.createElement("button");
-  b.innerText = name;
-
-  b.onclick = () => {
-    let p = list[Math.floor(Math.random() * list.length)];
-    loadPuzzle(p);
-  };
-
-  controls.appendChild(b);
-}
-
-controls.appendChild(document.createElement("br"));
-addDiff("Easy", easy);
-addDiff("Medium", medium);
-addDiff("Hard", hard);
+loadPuzzle();
 
 /* SAVE */
 function saveGame() {
-  let data = cells.map(c => ({
-    value: c.value,
-    fixed: c.fixed
-  }));
+  let data = cells.map(c => c.value);
   localStorage.setItem("sudoku", JSON.stringify(data));
 }
 
@@ -366,34 +254,26 @@ function loadGame() {
   if (!data) return;
 
   for (let i = 0; i < 81; i++) {
-
-    if (!data[i]) continue;
-
-    cells[i].value = data[i].value;
-    cells[i].big.innerText = data[i].value || "";
-    cells[i].fixed = data[i].fixed;
+    cells[i].value = data[i];
+    cells[i].big.innerText = data[i] || "";
   }
 
   recalc();
-
-  gameOn = true; // 👈 QUESTA È LA CHIAVE
-
-  selectedIndex = -1;
-
-  cells.forEach(c => {
-    c.el.classList.remove("selected", "highlight");
-  });
 }
 
+/* BOTTONI SAVE */
+let saveBtn = document.createElement("button");
+saveBtn.innerText = "SALVA";
+saveBtn.onclick = saveGame;
 
+let loadBtn = document.createElement("button");
+loadBtn.innerText = "CARICA";
+loadBtn.onclick = loadGame;
 
+controls.appendChild(document.createElement("br"));
+controls.appendChild(saveBtn);
+controls.appendChild(loadBtn);
 
-
-</script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
 </script>
 
 </body>

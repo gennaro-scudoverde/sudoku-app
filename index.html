@@ -27,6 +27,19 @@ body {
   position: relative;
   overflow: hidden;
 }
+button {
+  margin: 5px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 2px solid #888;
+  background: #e6e6a8;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:active {
+  background: #d4d48a;
+}
 
 /* BORDI 3x3 */
 .cell:nth-child(3n) {
@@ -348,7 +361,6 @@ function saveGame() {
   localStorage.setItem("sudoku", JSON.stringify(data));
 }
 
-
 function loadGame() {
   let data = JSON.parse(localStorage.getItem("sudoku"));
   if (!data) return;
@@ -364,12 +376,15 @@ function loadGame() {
 
   recalc();
 
+  gameOn = true; // 👈 QUESTA È LA CHIAVE
+
   selectedIndex = -1;
 
   cells.forEach(c => {
     c.el.classList.remove("selected", "highlight");
   });
 }
+
 
 
 

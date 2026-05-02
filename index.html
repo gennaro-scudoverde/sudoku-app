@@ -4,10 +4,8 @@
 <link rel="manifest" href="manifest.json"> 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-
 body {
   margin: 0;
-  padding: 10px;
   text-align: center;
   font-family: Arial;
   background: #f4f6f8;
@@ -17,7 +15,7 @@ body {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   width: 95vw;
-  max-width: 420px;
+  max-width: 500px;
   margin: 20px auto;
 }
 
@@ -28,9 +26,27 @@ body {
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-
 }
 
+/* BORDI 3x3 */
+.cell:nth-child(3n) {
+  border-right: 3px solid black;
+}
+
+.cell:nth-child(9n+1) {
+  border-left: 3px solid black;
+}
+
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54) {
+  border-bottom: 3px solid black;
+}
+
+.cell:nth-child(-n+9) {
+  border-top: 3px solid black;
+}
+
+/* NOTE */
 .notes {
   position: absolute;
   top: 0;
@@ -44,22 +60,33 @@ body {
 
   font-size: 10px;
   color: #c44;
-  .notes div {
+}
+
+.notes div {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* NUMERO GRANDE */
+.big {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: bold;
 }
 
+/* EVIDENZIAZIONE */
+.selected {
+  background-color: #ffe9a8;
+}
 
-button {
-  margin: 5px;
-  padding: 10px 15px;
-  border-radius: 10px;
-  border: 1px solid #888;
-  background: #e8e58a;
-  font-weight: bold;
+.highlight {
+  background-color: #f3f7ff;
 }
 
 
@@ -98,7 +125,6 @@ for (let i = 0; i < 81; i++) {
   for (let n = 1; n <= 9; n++) {
     let d = document.createElement("div");
     d.innerText = n;
-    d.style.textAlign = "center";
     notes.appendChild(d);
     noteEls.push(d);
   }
@@ -121,20 +147,23 @@ for (let i = 0; i < 81; i++) {
   cell.onclick = function() {
 
     selectedIndex = i;
+
+    // 👉 evidenziazione
     highlight(i);
 
     if (cells[i].fixed) return;
 
-    if (selectedIndex === i) {
-      cells[i].value = null;
-      cells[i].big.innerText = "";
-      cells[i].notes.style.display = "grid";
-      recalc();
-    }
+    // cancella numero se riclicchi
+    cells[i].value = null;
+    cells[i].big.innerText = "";
+    cells[i].notes.style.display = "grid";
+
+    recalc();
   };
 
   grid.appendChild(cell);
 }
+
 
 /* HIGHLIGHT */
 function highlight(index) {
@@ -287,6 +316,11 @@ function loadPuzzle(p) {
   }
   recalc();
 }
+  selectedIndex = -1;
+
+  cells.forEach(c => {
+    c.el.classList.remove("selected", "highlight");
+  });
 
 function addDiff(name, list) {
   let b = document.createElement("button");
@@ -307,20 +341,38 @@ addDiff("Hard", hard);
 
 /* SAVE */
 function saveGame() {
-  let data = cells.map(c => c.value);
+  let data = cells.map(c => ({
+    value: c.value,
+    fixed: c.fixed
+  }));
   localStorage.setItem("sudoku", JSON.stringify(data));
 }
+
 
 function loadGame() {
   let data = JSON.parse(localStorage.getItem("sudoku"));
   if (!data) return;
 
   for (let i = 0; i < 81; i++) {
-    cells[i].value = data[i];
-    cells[i].big.innerText = data[i] || "";
+
+    if (!data[i]) continue;
+
+    cells[i].value = data[i].value;
+    cells[i].big.innerText = data[i].value || "";
+    cells[i].fixed = data[i].fixed;
   }
+
   recalc();
+
+  selectedIndex = -1;
+
+  cells.forEach(c => {
+    c.el.classList.remove("selected", "highlight");
+  });
 }
+
+
+
 
 </script>
 <script>

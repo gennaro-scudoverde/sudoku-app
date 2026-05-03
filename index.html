@@ -36,8 +36,7 @@ body{
 .cell:nth-child(-n+9){border-top:3px solid black;}
 
 .selected{background:#ffe9a8;}
-.highlight{background:#eef3ff;}
-.same{background:#ffe082;}
+.noteSame{background:#ffd54f;}
 
 .big{
   position:absolute;
@@ -66,19 +65,20 @@ body{
   justify-content:center;
 }
 
+/* bottoni */
 button{
   padding:10px;
-  border-radius:12px;
+  border-radius:10px;
   border:2px solid #555;
-  font-size:18px;
   margin:4px;
 }
 
-.numPad{display:flex;justify-content:center;flex-wrap:wrap;}
+.numPad{display:flex;justify-content:center;}
 .numBtn{background:#fff3cd;}
 .ctrlBtn{background:#ffe0b2;}
 .mainBtn{background:#c8e6c9;}
 .diffBtn{background:#bbdefb;}
+
 </style>
 </head>
 
@@ -174,30 +174,28 @@ function isValid(index,num){
   return true;
 }
 
-/* EVIDENZIA */
+/* HIGHLIGHT SOLO NOTE */
 function highlight(i){
 
-  cells.forEach(c=>c.el.classList.remove("selected","highlight","same"));
-
-  let row=Math.floor(i/9);
-  let col=i%9;
-  let val=cells[i].value;
-
-  cells.forEach((c,index)=>{
-    let r=Math.floor(index/9);
-    let co=index%9;
-
-    if(r===row || co===col)
-      c.el.classList.add("highlight");
-
-    if(val && c.value===val)
-      c.el.classList.add("same");
+  cells.forEach(c=>{
+    c.el.classList.remove("selected");
+    c.noteEls.forEach(n=>n.classList.remove("noteSame"));
   });
 
+  let val=cells[i].value;
+
   cells[i].el.classList.add("selected");
+
+  if(!val) return;
+
+  cells.forEach(c=>{
+    if(!c.value){
+      c.noteEls[val-1].classList.add("noteSame");
+    }
+  });
 }
 
-/* NOTE */
+/* RECALC */
 function recalc(){
 
   cells.forEach(c=>{
@@ -206,6 +204,7 @@ function recalc(){
   });
 
   for(let i=0;i<81;i++){
+
     let v=cells[i].value;
     if(!v) continue;
 
@@ -213,28 +212,31 @@ function recalc(){
     let col=i%9;
 
     for(let j=row*9;j<row*9+9;j++)
-      cells[j].noteEls[v-1].style.visibility="hidden";
+      if(!cells[j].value)
+        cells[j].noteEls[v-1].style.visibility="hidden";
 
     for(let j=col;j<81;j+=9)
-      cells[j].noteEls[v-1].style.visibility="hidden";
-    // BOX 3x3
-let sr = Math.floor(row/3)*3;
-let sc = Math.floor(col/3)*3;
+      if(!cells[j].value)
+        cells[j].noteEls[v-1].style.visibility="hidden";
 
-for(let r=sr;r<sr+3;r++){
-  for(let c=sc;c<sc+3;c++){
-    cells[r*9+c].noteEls[v-1].style.visibility="hidden";
-  }
-}
+    let sr=Math.floor(row/3)*3;
+    let sc=Math.floor(col/3)*3;
 
+    for(let r=sr;r<sr+3;r++)
+      for(let c=sc;c<sc+3;c++){
+        let idx=r*9+c;
+        if(!cells[idx].value)
+          cells[idx].noteEls[v-1].style.visibility="hidden";
+      }
   }
 }
 
 /* NUMERI */
-let numPad=document.createElement("div");
-numPad.className="numPad";
+let pad=document.createElement("div");
+pad.className="numPad";
 
 for(let n=1;n<=9;n++){
+
   let b=document.createElement("button");
   b.innerText=n;
   b.className="numBtn";
@@ -262,14 +264,13 @@ for(let n=1;n<=9;n++){
     highlight(selectedIndex);
   };
 
-  numPad.appendChild(b);
+  pad.appendChild(b);
 }
 
-controls.appendChild(numPad);
+controls.appendChild(pad);
 
 /* BOTTONI */
-
-function addBtn(t,cls,fn){
+function btn(t,cls,fn){
   let b=document.createElement("button");
   b.innerText=t;
   b.className=cls;
@@ -277,7 +278,7 @@ function addBtn(t,cls,fn){
   return b;
 }
 
-controls.appendChild(addBtn("RESET","ctrlBtn",()=>{
+controls.appendChild(btn("RESET","ctrlBtn",()=>{
   cells.forEach(c=>{
     c.value=null;
     c.fixed=false;
@@ -286,11 +287,11 @@ controls.appendChild(addBtn("RESET","ctrlBtn",()=>{
   recalc();
 }));
 
-controls.appendChild(addBtn("FISSA","ctrlBtn",()=>{
+controls.appendChild(btn("FISSA","ctrlBtn",()=>{
   cells.forEach(c=>{if(c.value)c.fixed=true;});
 }));
 
-controls.appendChild(addBtn("PROVA","ctrlBtn",()=>{
+controls.appendChild(btn("PROVA","ctrlBtn",()=>{
   if(!inTest){
     savedState=cells.map(c=>c.value);
     inTest=true;
@@ -306,43 +307,27 @@ controls.appendChild(addBtn("PROVA","ctrlBtn",()=>{
 
 controls.appendChild(document.createElement("br"));
 
-controls.appendChild(addBtn("ON","mainBtn",loadGame));
-controls.appendChild(addBtn("OFF","mainBtn",saveGame));
+controls.appendChild(btn("ON","mainBtn",loadGame));
+controls.appendChild(btn("OFF","mainBtn",saveGame));
 
 controls.appendChild(document.createElement("br"));
 
-controls.appendChild(addBtn("EASY","diffBtn",()=>generate(35)));
-controls.appendChild(addBtn("MEDIUM","diffBtn",()=>generate(45)));
-controls.appendChild(addBtn("HARD","diffBtn",()=>generate(55)));
+controls.appendChild(btn("EASY","diffBtn",()=>generate(35)));
+controls.appendChild(btn("MEDIUM","diffBtn",()=>generate(45)));
+controls.appendChild(btn("HARD","diffBtn",()=>generate(55)));
 
-/* GENERATORE VERO */
+/* GENERATORE */
 function generate(empty){
 
   let grid=new Array(81).fill(0);
 
-  function fill(pos){
-    if(pos===81) return true;
-
-    let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
-
-    for(let n of nums){
-
-      if(validGrid(grid,pos,n)){
-        grid[pos]=n;
-        if(fill(pos+1)) return true;
-        grid[pos]=0;
-      }
-    }
-    return false;
-  }
-
-  function validGrid(g,i,n){
+  function valid(i,n){
     let r=Math.floor(i/9);
     let c=i%9;
 
     for(let x=0;x<9;x++){
-      if(g[r*9+x]===n) return false;
-      if(g[x*9+c]===n) return false;
+      if(grid[r*9+x]===n) return false;
+      if(grid[x*9+c]===n) return false;
     }
 
     let sr=Math.floor(r/3)*3;
@@ -350,9 +335,24 @@ function generate(empty){
 
     for(let rr=sr;rr<sr+3;rr++)
       for(let cc=sc;cc<sc+3;cc++)
-        if(g[rr*9+cc]===n) return false;
+        if(grid[rr*9+cc]===n) return false;
 
     return true;
+  }
+
+  function fill(i){
+    if(i===81) return true;
+
+    let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
+
+    for(let n of nums){
+      if(valid(i,n)){
+        grid[i]=n;
+        if(fill(i+1)) return true;
+        grid[i]=0;
+      }
+    }
+    return false;
   }
 
   fill(0);
@@ -367,7 +367,7 @@ function generate(empty){
   }
 
   cells.forEach((c,i)=>{
-    if(grid[i]!==0){
+    if(grid[i]){
       c.value=grid[i];
       c.big.innerText=grid[i];
       c.fixed=true;
@@ -384,22 +384,16 @@ function generate(empty){
 /* SAVE */
 function saveGame(){
 
-  let data=cells.map(c=>({
-    v:c.value,
-    f:c.fixed
-  }));
-
+  let data=cells.map(c=>({v:c.value,f:c.fixed}));
   localStorage.setItem("sudoku",JSON.stringify(data));
 
-  // 🔥 reset visivo (effetto OFF)
   cells.forEach(c=>{
     c.value=null;
     c.fixed=false;
     c.big.innerText="";
   });
 
-  selectedIndex = -1;
-
+  selectedIndex=-1;
   recalc();
 }
 
@@ -415,11 +409,8 @@ function loadGame(){
     c.big.innerText=c.value||"";
   });
 
+  selectedIndex=-1;
   recalc();
-
-  selectedIndex = -1;
-}
-
 }
 
 recalc();

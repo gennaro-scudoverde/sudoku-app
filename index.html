@@ -233,8 +233,37 @@ function recalc(){
 }
 
 /* NUMERI */
+let numPad = document.createElement("div");
+numPad.className = "numPad";
+
 for(let n=1;n<=9;n++){
   let b=document.createElement("button");
+  b.innerText=n;
+  b.className="numBtn";
+
+  b.onclick=function(){
+    if(!gameOn || selectedIndex==-1) return;
+
+    let c=cells[selectedIndex];
+    if(c.fixed) return;
+
+    if(c.value===n){
+      c.value=null;
+      c.big.innerText="";
+    } else {
+      c.value=n;
+      c.big.innerText=n;
+    }
+
+    recalc();
+    highlight(selectedIndex);
+  };
+
+  numPad.appendChild(b);
+}
+
+controls.appendChild(numPad);
+
   b.innerText=n;
   b.className="numBtn";
 
@@ -351,7 +380,8 @@ controls.appendChild(document.createElement("br"));
 ["easy","medium","hard"].forEach(d=>{
   let b=document.createElement("button");
   b.innerText=d.toUpperCase();
-  b.className="ctrlBtn";
+  b.className="diffBtn";
+
 
   b.onclick=function(){
     loadPuzzle(generateSudoku(d));

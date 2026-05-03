@@ -63,11 +63,33 @@ body {
 /* BOTTONI */
 button {
   margin:5px;
-  padding:10px;
-  border-radius:10px;
-  font-size:16px;
+  padding:12px;
+  border-radius:12px;
+  font-size:18px;
   border:2px solid #555;
+  min-width:50px;
 }
+
+/* CONTENITORI */
+.numPad {
+  display:grid;
+  grid-template-columns: repeat(3, 70px);
+  justify-content:center;
+  gap:10px;
+  margin-top:10px;
+}
+
+.ctrlRow {
+  margin-top:10px;
+}
+
+/* COLORI */
+.numBtn { background:#fff3cd; }
+.ctrlBtn { background:#ffe0b2; }
+.mainBtn { background:#c8e6c9; }
+.danger { background:#ffcdd2; }
+.diffBtn { background:#bbdefb; }
+
 
 .numBtn { background:#fff3cd; }
 .ctrlBtn { background:#d1ecf1; }

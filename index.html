@@ -334,9 +334,9 @@ controls.appendChild(row2);
 let row3=document.createElement("div");
 row3.className="ctrlRow";
 
-row3.appendChild(addButton("EASY","diffBtn",()=>randomGame(35)));
-row3.appendChild(addButton("MEDIUM","diffBtn",()=>randomGame(45)));
-row3.appendChild(addButton("HARD","diffBtn",()=>randomGame(55)));
+row3.appendChild(addButton("EASY","diffBtn",()=>randomGame("easy")));
+row3.appendChild(addButton("MEDIUM","diffBtn",()=>randomGame("medium")));
+row3.appendChild(addButton("HARD","diffBtn",()=>randomGame("hard")));
 
 controls.appendChild(row3);
 

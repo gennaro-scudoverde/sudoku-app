@@ -11,7 +11,6 @@
 <title>Sudoku</title>
 
 <style>
-
 body {
   margin: 0;
   text-align: center;
@@ -48,6 +47,22 @@ body {
   font-weight:bold;
 }
 
+.notes {
+  position:absolute;
+  width:100%;
+  height:100%;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  font-size:10px;
+  color:#c44;
+}
+
+.notes div {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
 button {
   margin:5px;
   padding:10px;
@@ -79,9 +94,7 @@ let controls = document.getElementById("controls");
 
 let cells = [];
 let selectedIndex = -1;
-let savedState = null;
-let inTest = false;
-let gameOn = false;
+let gameOn = true;
 
 /* CREA CELLE */
 for (let i = 0; i < 81; i++) {
@@ -89,20 +102,34 @@ for (let i = 0; i < 81; i++) {
   let cell = document.createElement("div");
   cell.className = "cell";
 
+  let notes = document.createElement("div");
+  notes.className = "notes";
+
+  let noteEls = [];
+
+  for (let n=1;n<=9;n++){
+    let d=document.createElement("div");
+    d.innerText=n;
+    notes.appendChild(d);
+    noteEls.push(d);
+  }
+
   let big = document.createElement("div");
   big.className = "big";
 
+  cell.appendChild(notes);
   cell.appendChild(big);
 
   cells.push({
     el:cell,
     big:big,
+    notes:notes,
+    noteEls:noteEls,
     value:null,
     fixed:false
   });
 
   cell.onclick=function(){
-    if(!gameOn) return;
     selectedIndex=i;
     highlight(i);
   };
@@ -141,13 +168,45 @@ function highlight(index){
   cells[index].el.classList.add("selected");
 }
 
+/* RECALCOLO NOTE */
+function recalc(){
+
+  cells.forEach(c=>{
+    for(let n of c.noteEls) n.style.visibility="visible";
+    if(!c.value) c.notes.style.display="grid";
+  });
+
+  for(let i=0;i<81;i++){
+    let val=cells[i].value;
+    if(val){
+      cells[i].notes.style.display="none";
+
+      let row=Math.floor(i/9);
+      let col=i%9;
+
+      for(let j=row*9;j<row*9+9;j++)
+        cells[j].noteEls[val-1].style.visibility="hidden";
+
+      for(let j=col;j<81;j+=9)
+        cells[j].noteEls[val-1].style.visibility="hidden";
+
+      let sr=Math.floor(row/3)*3;
+      let sc=Math.floor(col/3)*3;
+
+      for(let r=sr;r<sr+3;r++)
+        for(let c=sc;c<sc+3;c++)
+          cells[r*9+c].noteEls[val-1].style.visibility="hidden";
+    }
+  }
+}
+
 /* NUMERI */
 for(let n=1;n<=9;n++){
   let b=document.createElement("button");
   b.innerText=n;
 
   b.onclick=function(){
-    if(!gameOn || selectedIndex==-1) return;
+    if(selectedIndex==-1) return;
 
     let c=cells[selectedIndex];
     if(c.fixed) return;
@@ -160,46 +219,16 @@ for(let n=1;n<=9;n++){
       c.big.innerText=n;
     }
 
+    recalc();
     highlight(selectedIndex);
   };
 
   controls.appendChild(b);
 }
 
-/* BOTTONI */
 controls.appendChild(document.createElement("br"));
 
-let on=document.createElement("button");
-on.innerText="ON";
-on.onclick=function(){
-  loadGame();
-  gameOn=true;
-};
-
-let prova=document.createElement("button");
-prova.innerText="PROVA";
-prova.onclick=function(){
-  if(!inTest){
-    savedState=cells.map(c=>({value:c.value}));
-    inTest=true;
-    prova.innerText="TORNA";
-  }else{
-    cells.forEach((c,i)=>{
-      c.value=savedState[i].value;
-      c.big.innerText=c.value||"";
-    });
-    inTest=false;
-    prova.innerText="PROVA";
-  }
-};
-
-let off=document.createElement("button");
-off.innerText="OFF";
-off.onclick=function(){
-  saveGame();
-  gameOn=false;
-};
-
+/* RESET */
 let reset=document.createElement("button");
 reset.innerText="RESET";
 reset.onclick=function(){
@@ -208,8 +237,12 @@ reset.onclick=function(){
     c.fixed=false;
     c.big.innerText="";
   });
+  recalc();
 };
 
+controls.appendChild(reset);
+
+/* FISSA */
 let fissa=document.createElement("button");
 fissa.innerText="FISSA";
 fissa.onclick=function(){
@@ -221,13 +254,11 @@ fissa.onclick=function(){
   });
 };
 
-controls.appendChild(on);
-controls.appendChild(prova);
-controls.appendChild(off);
-controls.appendChild(reset);
 controls.appendChild(fissa);
 
-/* GENERATORE INTELLIGENTE */
+controls.appendChild(document.createElement("br"));
+
+/* GENERATORE */
 
 function isValid(grid, row, col, num){
   for(let x=0;x<9;x++){
@@ -238,11 +269,10 @@ function isValid(grid, row, col, num){
   let sr=row-row%3;
   let sc=col-col%3;
 
-  for(let i=0;i<3;i++){
-    for(let j=0;j<3;j++){
-      if(grid[i+sr][j+sc]==num) return false;
-    }
-  }
+  for(let r=0;r<3;r++)
+    for(let c=0;c<3;c++)
+      if(grid[sr+r][sc+c]==num) return false;
+
   return true;
 }
 
@@ -264,80 +294,27 @@ function solve(grid){
   return true;
 }
 
-function countSolutions(grid){
-  let count=0;
+function generate(difficulty){
 
-  function solveCount(g){
-    for(let r=0;r<9;r++){
-      for(let c=0;c<9;c++){
-        if(g[r][c]==0){
-          for(let n=1;n<=9;n++){
-            if(isValid(g,r,c,n)){
-              g[r][c]=n;
-              solveCount(g);
-              g[r][c]=0;
-            }
-          }
-          return;
-        }
-      }
-    }
-    count++;
-  }
+  let g = Array.from({length:9},()=>Array(9).fill(0));
+  solve(g);
 
-  solveCount(JSON.parse(JSON.stringify(grid)));
-  return count;
-}
+  let holes = difficulty=="easy"?40:
+              difficulty=="medium"?50:60;
 
-function generateSudoku(diff){
-
-  let grid = Array.from({length:9},()=>Array(9).fill(0));
-  solve(grid);
-
-  let holes = 40;
-  if(diff=="medium") holes=50;
-  if(diff=="hard") holes=60;
-
-  let attempts = holes;
-
-  while(attempts>0){
+  while(holes>0){
     let r=Math.floor(Math.random()*9);
     let c=Math.floor(Math.random()*9);
 
-    if(grid[r][c]!=0){
-      let backup=grid[r][c];
-      grid[r][c]=0;
-
-      let copy = JSON.parse(JSON.stringify(grid));
-
-      if(countSolutions(copy)!=1){
-        grid[r][c]=backup;
-      }
-
-      attempts--;
+    if(g[r][c]!=0){
+      g[r][c]=0;
+      holes--;
     }
   }
 
-  return grid.flat().join("");
+  return g.flat().join("");
 }
 
-/* DIFFICOLTÀ */
-controls.appendChild(document.createElement("br"));
-
-["easy","medium","hard"].forEach(diff=>{
-  let b=document.createElement("button");
-  b.innerText=diff.toUpperCase();
-
-  b.onclick=function(){
-    let p = generateSudoku(diff);
-    loadPuzzle(p);
-    gameOn=true;
-  };
-
-  controls.appendChild(b);
-});
-
-/* CARICA */
 function loadPuzzle(p){
   cells.forEach((c,i)=>{
     let v=p[i];
@@ -351,29 +328,23 @@ function loadPuzzle(p){
       c.fixed=false;
     }
   });
+  recalc();
 }
 
-/* SAVE */
-function saveGame(){
-  let data=cells.map(c=>({
-    value:c.value,
-    fixed:c.fixed
-  }));
-  localStorage.setItem("sudoku",JSON.stringify(data));
-}
+/* BOTTONI DIFFICOLTÀ */
 
-function loadGame(){
-  let data=JSON.parse(localStorage.getItem("sudoku"));
-  if(!data) return;
+["easy","medium","hard"].forEach(d=>{
+  let b=document.createElement("button");
+  b.innerText=d.toUpperCase();
 
-  cells.forEach((c,i)=>{
-    c.value=data[i].value;
-    c.big.innerText=c.value||"";
-    c.fixed=data[i].fixed;
-  });
-}
+  b.onclick=function(){
+    let p=generate(d);
+    loadPuzzle(p);
+  };
+
+  controls.appendChild(b);
+});
 
 </script>
-
 </body>
 </html>

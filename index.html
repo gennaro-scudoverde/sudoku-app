@@ -150,9 +150,23 @@ for (let i = 0; i < 81; i++) {
   });
 
   cell.onclick=function(){
-    selectedIndex=i;
+
+  let c = cells[i];
+
+  // se clicchi su una cella già selezionata → cancella (se non fissa)
+  if(selectedIndex === i && c.value && !c.fixed){
+    c.value = null;
+    c.big.innerText = "";
+    recalc();
     highlight(i);
-  };
+    return;
+  }
+
+  // altrimenti seleziona normalmente
+  selectedIndex = i;
+  highlight(i);
+};
+
 
   grid.appendChild(cell);
 }

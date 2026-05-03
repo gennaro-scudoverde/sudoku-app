@@ -341,30 +341,45 @@ row3.appendChild(addButton("HARD","diffBtn",()=>randomGame(55)));
 controls.appendChild(row3);
 
 /* GENERATORE SEMPLICE */
-function randomGame(empty){
+function randomGame(type){
 
-  let arr=Array(81).fill(0);
+  const easy = [
+    "530070000600195000098000060800060003400803001700020006060000280000419005000080079"
+  ];
 
-  for(let i=0;i<81-empty;i++){
-    let pos;
-    do{
-      pos=Math.floor(Math.random()*81);
-    }while(arr[pos]!=0);
+  const medium = [
+    "600120384008459072000006005000264030070080006940003000310000050089700000502000190"
+  ];
 
-    arr[pos]=Math.floor(Math.random()*9)+1;
-  }
+  const hard = [
+    "000000907000420180000705026100904000050000040000507009920108000034059000507000000"
+  ];
+
+  let list;
+
+  if(type==="easy") list = easy;
+  if(type==="medium") list = medium;
+  if(type==="hard") list = hard;
+
+  let puzzle = list[Math.floor(Math.random()*list.length)];
 
   cells.forEach((c,i)=>{
-    if(arr[i]){
-      c.value=arr[i];
-      c.big.innerText=c.value;
-      c.fixed=true;
-    }else{
-      c.value=null;
-      c.big.innerText="";
-      c.fixed=false;
+    let v = puzzle[i];
+
+    if(v !== "0"){
+      c.value = parseInt(v);
+      c.big.innerText = v;
+      c.fixed = true;
+    } else {
+      c.value = null;
+      c.big.innerText = "";
+      c.fixed = false;
     }
   });
+
+  recalc();
+}
+
 
   recalc();
 }

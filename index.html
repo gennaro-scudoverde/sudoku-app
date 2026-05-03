@@ -217,6 +217,16 @@ function recalc(){
 
     for(let j=col;j<81;j+=9)
       cells[j].noteEls[v-1].style.visibility="hidden";
+    // BOX 3x3
+let sr = Math.floor(row/3)*3;
+let sc = Math.floor(col/3)*3;
+
+for(let r=sr;r<sr+3;r++){
+  for(let c=sc;c<sc+3;c++){
+    cells[r*9+c].noteEls[v-1].style.visibility="hidden";
+  }
+}
+
   }
 }
 

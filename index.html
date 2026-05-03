@@ -383,12 +383,29 @@ function generate(empty){
 
 /* SAVE */
 function saveGame(){
-  let data=cells.map(c=>({v:c.value,f:c.fixed}));
+
+  let data=cells.map(c=>({
+    v:c.value,
+    f:c.fixed
+  }));
+
   localStorage.setItem("sudoku",JSON.stringify(data));
+
+  // 🔥 reset visivo (effetto OFF)
+  cells.forEach(c=>{
+    c.value=null;
+    c.fixed=false;
+    c.big.innerText="";
+  });
+
+  selectedIndex = -1;
+
+  recalc();
 }
 
 /* LOAD */
 function loadGame(){
+
   let data=JSON.parse(localStorage.getItem("sudoku"));
   if(!data) return;
 
@@ -399,6 +416,10 @@ function loadGame(){
   });
 
   recalc();
+
+  selectedIndex = -1;
+}
+
 }
 
 recalc();

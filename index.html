@@ -72,7 +72,7 @@ button {
 <div id="grid"></div>
 <div id="controls"></div>
 
-<script src="sudoku-db.js"></script>
+
 
 <script>
 
@@ -249,19 +249,55 @@ function loadPuzzle(p){
 /* DIFFICOLTÀ */
 controls.appendChild(document.createElement("br"));
 
+function generateSudoku(difficulty){
+
+  // soluzione base (valida)
+  let base = [
+    "123456789",
+    "456789123",
+    "789123456",
+    "214365897",
+    "365897214",
+    "897214365",
+    "531642978",
+    "642978531",
+    "978531642"
+  ];
+
+  // mescola righe
+  base.sort(() => Math.random() - 0.5);
+
+  let grid = base.join("").split("");
+
+  // rimuovi numeri in base alla difficoltà
+  let holes = 40; // easy
+
+  if(difficulty === "medium") holes = 50;
+  if(difficulty === "hard") holes = 60;
+
+  for(let i=0;i<holes;i++){
+    let idx = Math.floor(Math.random()*81);
+    grid[idx] = "0";
+  }
+
+  return grid.join("");
+}
+
+controls.appendChild(document.createElement("br"));
+
 ["easy","medium","hard"].forEach(diff=>{
   let b=document.createElement("button");
   b.innerText=diff.toUpperCase();
 
   b.onclick=function(){
-    let list = sudokuDB[diff];
-    let p = list[Math.floor(Math.random()*list.length)];
-    loadPuzzle(p);
+    let puzzle = generateSudoku(diff);
+    loadPuzzle(puzzle);
     gameOn=true;
   };
 
   controls.appendChild(b);
 });
+
 
 /* SAVE */
 function saveGame(){

@@ -243,13 +243,21 @@ for(let n=1;n<=9;n++){
     let c=cells[selectedIndex];
     if(c.fixed) return;
 
-    if(c.value===n){
-      c.value=null;
-      c.big.innerText="";
-    } else {
-      c.value=n;
-      c.big.innerText=n;
-    }
+   if(c.value===n){
+  c.value=null;
+  c.big.innerText="";
+} else {
+
+  // BLOCCO SE NON VALIDO
+  if(!isValidMove(selectedIndex, n)){
+    alert("Mossa non valida!");
+    return;
+  }
+
+  c.value=n;
+  c.big.innerText=n;
+}
+
 
     recalc();
     highlight(selectedIndex);
@@ -372,6 +380,34 @@ function loadGame(){
 }
 
 recalc();
+function isValidMove(index, num){
+
+  let row = Math.floor(index/9);
+  let col = index % 9;
+
+  // riga
+  for(let i=row*9;i<row*9+9;i++){
+    if(i!==index && cells[i].value===num) return false;
+  }
+
+  // colonna
+  for(let i=col;i<81;i+=9){
+    if(i!==index && cells[i].value===num) return false;
+  }
+
+  // box 3x3
+  let sr=Math.floor(row/3)*3;
+  let sc=Math.floor(col/3)*3;
+
+  for(let r=sr;r<sr+3;r++){
+    for(let c=sc;c<sc+3;c++){
+      let i=r*9+c;
+      if(i!==index && cells[i].value===num) return false;
+    }
+  }
+
+  return true;
+}
 
 </script>
 

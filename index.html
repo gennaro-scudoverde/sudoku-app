@@ -334,28 +334,83 @@ controls.appendChild(row3);
 /* GENERATORE SEMPLICE */
 function randomGame(empty){
 
-  let gridArr = Array.from({length:81},()=>0);
+  // crea griglia vuota 9x9
+  let grid = Array.from({length:9},()=>Array(9).fill(0));
 
-  for(let i=0;i<81-empty;i++){
-    let pos;
-    do{
-      pos=Math.floor(Math.random()*81);
-    }while(gridArr[pos]!=0);
+  // funzione validità
+  function isValid(g, r, c, n){
+    for(let i=0;i<9;i++){
+      if(g[r][i]===n) return false;
+      if(g[i][c]===n) return false;
+    }
 
-    gridArr[pos]=Math.floor(Math.random()*9)+1;
+    let sr=Math.floor(r/3)*3;
+    let sc=Math.floor(c/3)*3;
+
+    for(let i=0;i<3;i++){
+      for(let j=0;j<3;j++){
+        if(g[sr+i][sc+j]===n) return false;
+      }
+    }
+    return true;
   }
 
-  cells.forEach((c,i)=>{
-    if(gridArr[i]!=0){
-      c.value=gridArr[i];
-      c.big.innerText=c.value;
-      c.fixed=true;
-    } else {
-      c.value=null;
-      c.big.innerText="";
-      c.fixed=false;
+  // solver per riempire completamente
+  function solve(g){
+    for(let r=0;r<9;r++){
+      for(let c=0;c<9;c++){
+        if(g[r][c]===0){
+          let nums=[1,2,3,4,5,6,7,8,9]
+            .sort(()=>Math.random()-0.5);
+
+          for(let n of nums){
+            if(isValid(g,r,c,n)){
+              g[r][c]=n;
+              if(solve(g)) return true;
+              g[r][c]=0;
+            }
+          }
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // genera soluzione completa
+  solve(grid);
+
+  // rimuove numeri (crea puzzle)
+  let attempts = empty;
+
+  while(attempts>0){
+    let r=Math.floor(Math.random()*9);
+    let c=Math.floor(Math.random()*9);
+
+    if(grid[r][c]!==0){
+      grid[r][c]=0;
+      attempts--;
+    }
+  }
+
+  // applica alla UI
+  cells.forEach((cell,i)=>{
+    let val = grid[Math.floor(i/9)][i%9];
+
+    if(val!==0){
+      cell.value=val;
+      cell.big.innerText=val;
+      cell.fixed=true;
+    }else{
+      cell.value=null;
+      cell.big.innerText="";
+      cell.fixed=false;
     }
   });
+
+  recalc();
+}
+
 
   recalc();
 }

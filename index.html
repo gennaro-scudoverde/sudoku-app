@@ -272,13 +272,10 @@ function solve(grid){
   for(let row=0;row<9;row++){
     for(let col=0;col<9;col++){
       if(grid[row][col]==0){
-
         for(let num=1;num<=9;num++){
           if(isValid(grid,row,col,num)){
             grid[row][col]=num;
-
             if(solve(grid)) return true;
-
             grid[row][col]=0;
           }
         }
@@ -339,13 +336,27 @@ function generateSudoku(difficulty){
 
       if(solutions!=1){
         grid[r][c]=backup;
-        attempts--;
       }
+
+      attempts--;
     }
   }
 
   return grid.flat().join("");
 }
+["easy","medium","hard"].forEach(diff=>{
+  let b=document.createElement("button");
+  b.innerText=diff.toUpperCase();
+
+  b.onclick=function(){
+    let puzzle = generateSudoku(diff);
+    loadPuzzle(puzzle);
+    gameOn=true;
+  };
+
+  controls.appendChild(b);
+});
+
 
 
 /* SAVE */

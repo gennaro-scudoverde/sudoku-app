@@ -11,6 +11,7 @@
 <title>Sudoku</title>
 
 <style>
+
 body {
   margin: 0;
   text-align: center;
@@ -32,10 +33,12 @@ body {
   position: relative;
 }
 
-.selected { background:#ffe9a8; }
-.highlight { background:#eef3ff; }
-.same { background:#ffe082; }
+/* COLORI */
+.selected { background:#ffe082; }
+.highlight { background:#e3f2fd; }
+.same { background:#fff59d; }
 
+/* NUMERO GRANDE */
 .big {
   position:absolute;
   width:100%;
@@ -47,6 +50,7 @@ body {
   font-weight:bold;
 }
 
+/* NOTE */
 .notes {
   position:absolute;
   width:100%;
@@ -63,11 +67,20 @@ body {
   justify-content:center;
 }
 
+/* BOTTONI */
 button {
   margin:5px;
-  padding:10px;
-  border-radius:10px;
+  padding:10px 15px;
+  border-radius:12px;
+  border:2px solid #444;
+  background:#e6e6a8;
+  font-size:16px;
 }
+
+.num { background:#f0f0f0; }
+.main { background:#c8e6c9; }
+.ctrl { background:#ffe0b2; }
+.diff { background:#bbdefb; }
 
 /* BORDI 3x3 */
 .cell:nth-child(3n) { border-right: 3px solid black; }
@@ -84,6 +97,7 @@ button {
 <body>
 
 <h2>Sudoku</h2>
+
 <div id="grid"></div>
 <div id="controls"></div>
 
@@ -94,7 +108,9 @@ let controls = document.getElementById("controls");
 
 let cells = [];
 let selectedIndex = -1;
-let gameOn = true;
+let gameOn = false;
+let savedState = null;
+let inTest = false;
 
 /* CREA CELLE */
 for (let i = 0; i < 81; i++) {
@@ -114,22 +130,23 @@ for (let i = 0; i < 81; i++) {
     noteEls.push(d);
   }
 
-  let big = document.createElement("div");
-  big.className = "big";
+  let big=document.createElement("div");
+  big.className="big";
 
   cell.appendChild(notes);
   cell.appendChild(big);
 
   cells.push({
     el:cell,
+    value:null,
+    fixed:false,
     big:big,
     notes:notes,
-    noteEls:noteEls,
-    value:null,
-    fixed:false
+    noteEls:noteEls
   });
 
   cell.onclick=function(){
+    if(!gameOn) return;
     selectedIndex=i;
     highlight(i);
   };
@@ -168,7 +185,7 @@ function highlight(index){
   cells[index].el.classList.add("selected");
 }
 
-/* RECALCOLO NOTE */
+/* NOTE AUTOMATICHE */
 function recalc(){
 
   cells.forEach(c=>{
@@ -204,9 +221,10 @@ function recalc(){
 for(let n=1;n<=9;n++){
   let b=document.createElement("button");
   b.innerText=n;
+  b.className="num";
 
   b.onclick=function(){
-    if(selectedIndex==-1) return;
+    if(!gameOn || selectedIndex==-1) return;
 
     let c=cells[selectedIndex];
     if(c.fixed) return;
@@ -226,101 +244,84 @@ for(let n=1;n<=9;n++){
   controls.appendChild(b);
 }
 
+/* RIGA 1 */
 controls.appendChild(document.createElement("br"));
 
-/* RESET */
-let reset=document.createElement("button");
-reset.innerText="RESET";
-reset.onclick=function(){
+let reset=btn("RESET","ctrl",()=>{
   cells.forEach(c=>{
     c.value=null;
     c.fixed=false;
     c.big.innerText="";
   });
   recalc();
-};
+});
 
-controls.appendChild(reset);
-
-/* FISSA */
-let fissa=document.createElement("button");
-fissa.innerText="FISSA";
-fissa.onclick=function(){
+let fissa=btn("FISSA","ctrl",()=>{
   cells.forEach(c=>{
     if(c.value){
       c.fixed=true;
       c.big.style.color="black";
     }
   });
-};
+});
 
-controls.appendChild(fissa);
+let prova=btn("PROVA","ctrl",()=>{
+  if(!inTest){
+    savedState=cells.map(c=>({value:c.value}));
+    inTest=true;
+    prova.innerText="TORNA";
+  }else{
+    cells.forEach((c,i)=>{
+      c.value=savedState[i].value;
+      c.big.innerText=c.value||"";
+    });
+    recalc();
+    inTest=false;
+    prova.innerText="PROVA";
+  }
+});
 
+/* RIGA 2 */
 controls.appendChild(document.createElement("br"));
 
-/* GENERATORE */
+let on=btn("ON","main",()=>{
+  loadGame();
+  gameOn=true;
+});
 
-function isValid(grid, row, col, num){
-  for(let x=0;x<9;x++){
-    if(grid[row][x]==num) return false;
-    if(grid[x][col]==num) return false;
-  }
+let off=btn("OFF","main",()=>{
+  saveGame();
+  gameOn=false;
+});
 
-  let sr=row-row%3;
-  let sc=col-col%3;
+/* RIGA 3 */
+controls.appendChild(document.createElement("br"));
 
-  for(let r=0;r<3;r++)
-    for(let c=0;c<3;c++)
-      if(grid[sr+r][sc+c]==num) return false;
+btn("EASY","diff",()=>generate("easy"));
+btn("MEDIUM","diff",()=>generate("medium"));
+btn("HARD","diff",()=>generate("hard"));
 
-  return true;
+/* FUNZIONE BUTTON */
+function btn(txt,cls,fn){
+  let b=document.createElement("button");
+  b.innerText=txt;
+  b.className=cls;
+  b.onclick=fn;
+  controls.appendChild(b);
+  return b;
 }
 
-function solve(grid){
-  for(let r=0;r<9;r++){
-    for(let c=0;c<9;c++){
-      if(grid[r][c]==0){
-        for(let n=1;n<=9;n++){
-          if(isValid(grid,r,c,n)){
-            grid[r][c]=n;
-            if(solve(grid)) return true;
-            grid[r][c]=0;
-          }
-        }
-        return false;
-      }
-    }
-  }
-  return true;
-}
+/* GENERATORE BASE */
+function generate(level){
 
-function generate(difficulty){
+  let holes = level=="easy"?35:level=="medium"?45:55;
 
-  let g = Array.from({length:9},()=>Array(9).fill(0));
-  solve(g);
+  let gridArr = Array.from({length:81},()=>Math.random()<0.5?0:Math.floor(Math.random()*9)+1);
 
-  let holes = difficulty=="easy"?40:
-              difficulty=="medium"?50:60;
-
-  while(holes>0){
-    let r=Math.floor(Math.random()*9);
-    let c=Math.floor(Math.random()*9);
-
-    if(g[r][c]!=0){
-      g[r][c]=0;
-      holes--;
-    }
-  }
-
-  return g.flat().join("");
-}
-
-function loadPuzzle(p){
   cells.forEach((c,i)=>{
-    let v=p[i];
-    if(v!="0"){
-      c.value=parseInt(v);
-      c.big.innerText=v;
+    if(gridArr[i]){
+      c.value=gridArr[i];
+      c.big.innerText=c.value;
       c.fixed=true;
     } else {
       c.value=null;
@@ -328,23 +329,36 @@ function loadPuzzle(p){
       c.fixed=false;
     }
   });
+
+  recalc();
+  gameOn=true;
+}
+
+/* SAVE */
+function saveGame(){
+  let data=cells.map(c=>({
+    value:c.value,
+    fixed:c.fixed
+  }));
+  localStorage.setItem("sudoku",JSON.stringify(data));
+}
+
+function loadGame(){
+  let data=JSON.parse(localStorage.getItem("sudoku"));
+  if(!data) return;
+
+  cells.forEach((c,i)=>{
+    c.value=data[i].value;
+    c.big.innerText=c.value||"";
+    c.fixed=data[i].fixed;
+  });
+
   recalc();
 }
 
-/* BOTTONI DIFFICOLTÀ */
-
-["easy","medium","hard"].forEach(d=>{
-  let b=document.createElement("button");
-  b.innerText=d.toUpperCase();
-
-  b.onclick=function(){
-    let p=generate(d);
-    loadPuzzle(p);
-  };
-
-  controls.appendChild(b);
-});
+recalc();
 
 </script>
+
 </body>
 </html>

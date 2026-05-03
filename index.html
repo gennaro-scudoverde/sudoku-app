@@ -2,49 +2,41 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192x192.png">
-<link rel="apple-touch-icon" href="icon-192x192.png">
-<meta name="theme-color" content="#4CAF50">
-
 <title>Sudoku</title>
 
 <style>
-
 body {
-  margin: 0;
-  text-align: center;
-  font-family: Arial;
-  background: #f4f6f8;
+  margin:0;
+  text-align:center;
+  font-family:Arial;
+  background:#f4f6f8;
 }
 
 #grid {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  width: 95vw;
-  max-width: 500px;
-  margin: 20px auto;
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  width:95vw;
+  max-width:500px;
+  margin:20px auto;
 }
 
 .cell {
-  aspect-ratio: 1;
-  border: 1px solid #999;
-  position: relative;
+  aspect-ratio:1;
+  border:1px solid #999;
+  position:relative;
 }
 
-/* bordi */
-.cell:nth-child(3n) { border-right: 3px solid black; }
-.cell:nth-child(9n+1) { border-left: 3px solid black; }
+.cell:nth-child(3n){border-right:3px solid black;}
+.cell:nth-child(9n+1){border-left:3px solid black;}
 .cell:nth-child(n+19):nth-child(-n+27),
-.cell:nth-child(n+46):nth-child(-n+54) {
-  border-bottom: 3px solid black;
+.cell:nth-child(n+46):nth-child(-n+54){
+  border-bottom:3px solid black;
 }
-.cell:nth-child(-n+9) { border-top: 3px solid black; }
+.cell:nth-child(-n+9){border-top:3px solid black;}
 
-.selected { background:#ffe9a8; }
-.highlight { background:#eef3ff; }
-.same { background:#ffe082; }
+.selected {background:#ffe9a8;}
+.highlight {background:#eef3ff;}
+.same {background:#ffe082;}
 
 .big {
   position:absolute;
@@ -67,39 +59,34 @@ body {
   font-size:10px;
   color:#c44;
 }
-
-.notes div {
+.notes div{
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
 /* BOTTONI */
-button {
+button{
   padding:10px;
   min-width:40px;
-
   border-radius:12px;
   border:2px solid #555;
-  font-size:18px;
+  font-size:16px;
 }
 
-.numPad {
+.numPad{
   display:flex;
   justify-content:center;
-  flex-wrap:wrap;
-  gap:8px;
+  gap:6px;
   margin-top:10px;
 }
 
+.ctrlRow{margin-top:10px;}
 
-.ctrlRow { margin-top:10px; }
-
-.numBtn { background:#fff3cd; }
-.ctrlBtn { background:#ffe0b2; }
-.mainBtn { background:#c8e6c9; }
-.diffBtn { background:#bbdefb; }
-
+.numBtn{background:#fff3cd;}
+.ctrlBtn{background:#ffe0b2;}
+.mainBtn{background:#c8e6c9;}
+.diffBtn{background:#bbdefb;}
 </style>
 </head>
 
@@ -118,7 +105,6 @@ let cells = [];
 let selectedIndex = -1;
 let savedState = null;
 let inTest = false;
-let gameOn = true;
 
 /* CREA CELLE */
 for (let i = 0; i < 81; i++) {
@@ -155,22 +141,20 @@ for (let i = 0; i < 81; i++) {
 
   cell.onclick=function(){
 
-  let c = cells[i];
+    let c=cells[i];
 
-  // se clicchi su una cella già selezionata → cancella (se non fissa)
-  if(selectedIndex === i && c.value && !c.fixed){
-    c.value = null;
-    c.big.innerText = "";
-    recalc();
+    // cancella se riclicchi
+    if(selectedIndex===i && c.value && !c.fixed){
+      c.value=null;
+      c.big.innerText="";
+      recalc();
+      highlight(i);
+      return;
+    }
+
+    selectedIndex=i;
     highlight(i);
-    return;
-  }
-
-  // altrimenti seleziona normalmente
-  selectedIndex = i;
-  highlight(i);
-};
-
+  };
 
   grid.appendChild(cell);
 }
@@ -202,7 +186,34 @@ function highlight(index){
   cells[index].el.classList.add("selected");
 }
 
-/* RECALC NOTE */
+/* VALIDAZIONE */
+function isValidMove(index,num){
+
+  let row=Math.floor(index/9);
+  let col=index%9;
+
+  for(let i=row*9;i<row*9+9;i++){
+    if(i!==index && cells[i].value===num) return false;
+  }
+
+  for(let i=col;i<81;i+=9){
+    if(i!==index && cells[i].value===num) return false;
+  }
+
+  let sr=Math.floor(row/3)*3;
+  let sc=Math.floor(col/3)*3;
+
+  for(let r=sr;r<sr+3;r++){
+    for(let c=sc;c<sc+3;c++){
+      let i=r*9+c;
+      if(i!==index && cells[i].value===num) return false;
+    }
+  }
+
+  return true;
+}
+
+/* RECALC */
 function recalc(){
 
   cells.forEach(c=>{
@@ -227,9 +238,9 @@ function recalc(){
   }
 }
 
-/* NUMERI */
-let numPad = document.createElement("div");
-numPad.className = "numPad";
+/* NUMPAD */
+let numPad=document.createElement("div");
+numPad.className="numPad";
 
 for(let n=1;n<=9;n++){
   let b=document.createElement("button");
@@ -243,21 +254,19 @@ for(let n=1;n<=9;n++){
     let c=cells[selectedIndex];
     if(c.fixed) return;
 
-   if(c.value===n){
-  c.value=null;
-  c.big.innerText="";
-} else {
+    if(c.value===n){
+      c.value=null;
+      c.big.innerText="";
+    }else{
 
-  // BLOCCO SE NON VALIDO
-  if(!isValidMove(selectedIndex, n)){
-    alert("Mossa non valida!");
-    return;
-  }
+      if(!isValidMove(selectedIndex,n)){
+        alert("Mossa non valida");
+        return;
+      }
 
-  c.value=n;
-  c.big.innerText=n;
-}
-
+      c.value=n;
+      c.big.innerText=n;
+    }
 
     recalc();
     highlight(selectedIndex);
@@ -269,8 +278,7 @@ for(let n=1;n<=9;n++){
 controls.appendChild(numPad);
 
 /* BOTTONI */
-
-function addButton(text, cls, fn){
+function addButton(text,cls,fn){
   let b=document.createElement("button");
   b.innerText=text;
   b.className=cls;
@@ -278,6 +286,7 @@ function addButton(text, cls, fn){
   return b;
 }
 
+/* RESET FISSA PROVA */
 let row1=document.createElement("div");
 row1.className="ctrlRow";
 
@@ -334,83 +343,28 @@ controls.appendChild(row3);
 /* GENERATORE SEMPLICE */
 function randomGame(empty){
 
-  // crea griglia vuota 9x9
-  let grid = Array.from({length:9},()=>Array(9).fill(0));
+  let arr=Array(81).fill(0);
 
-  // funzione validità
-  function isValid(g, r, c, n){
-    for(let i=0;i<9;i++){
-      if(g[r][i]===n) return false;
-      if(g[i][c]===n) return false;
-    }
+  for(let i=0;i<81-empty;i++){
+    let pos;
+    do{
+      pos=Math.floor(Math.random()*81);
+    }while(arr[pos]!=0);
 
-    let sr=Math.floor(r/3)*3;
-    let sc=Math.floor(c/3)*3;
-
-    for(let i=0;i<3;i++){
-      for(let j=0;j<3;j++){
-        if(g[sr+i][sc+j]===n) return false;
-      }
-    }
-    return true;
+    arr[pos]=Math.floor(Math.random()*9)+1;
   }
 
-  // solver per riempire completamente
-  function solve(g){
-    for(let r=0;r<9;r++){
-      for(let c=0;c<9;c++){
-        if(g[r][c]===0){
-          let nums=[1,2,3,4,5,6,7,8,9]
-            .sort(()=>Math.random()-0.5);
-
-          for(let n of nums){
-            if(isValid(g,r,c,n)){
-              g[r][c]=n;
-              if(solve(g)) return true;
-              g[r][c]=0;
-            }
-          }
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  // genera soluzione completa
-  solve(grid);
-
-  // rimuove numeri (crea puzzle)
-  let attempts = empty;
-
-  while(attempts>0){
-    let r=Math.floor(Math.random()*9);
-    let c=Math.floor(Math.random()*9);
-
-    if(grid[r][c]!==0){
-      grid[r][c]=0;
-      attempts--;
-    }
-  }
-
-  // applica alla UI
-  cells.forEach((cell,i)=>{
-    let val = grid[Math.floor(i/9)][i%9];
-
-    if(val!==0){
-      cell.value=val;
-      cell.big.innerText=val;
-      cell.fixed=true;
+  cells.forEach((c,i)=>{
+    if(arr[i]){
+      c.value=arr[i];
+      c.big.innerText=c.value;
+      c.fixed=true;
     }else{
-      cell.value=null;
-      cell.big.innerText="";
-      cell.fixed=false;
+      c.value=null;
+      c.big.innerText="";
+      c.fixed=false;
     }
   });
-
-  recalc();
-}
-
 
   recalc();
 }
@@ -435,36 +389,7 @@ function loadGame(){
 }
 
 recalc();
-function isValidMove(index, num){
-
-  let row = Math.floor(index/9);
-  let col = index % 9;
-
-  // riga
-  for(let i=row*9;i<row*9+9;i++){
-    if(i!==index && cells[i].value===num) return false;
-  }
-
-  // colonna
-  for(let i=col;i<81;i+=9){
-    if(i!==index && cells[i].value===num) return false;
-  }
-
-  // box 3x3
-  let sr=Math.floor(row/3)*3;
-  let sc=Math.floor(col/3)*3;
-
-  for(let r=sr;r<sr+3;r++){
-    for(let c=sc;c<sc+3;c++){
-      let i=r*9+c;
-      if(i!==index && cells[i].value===num) return false;
-    }
-  }
-
-  return true;
-}
 
 </script>
-
 </body>
 </html>

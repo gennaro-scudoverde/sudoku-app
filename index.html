@@ -72,8 +72,6 @@ button {
 <div id="grid"></div>
 <div id="controls"></div>
 
-
-
 <script>
 
 let grid = document.getElementById("grid");
@@ -105,7 +103,6 @@ for (let i = 0; i < 81; i++) {
 
   cell.onclick=function(){
     if(!gameOn) return;
-
     selectedIndex=i;
     highlight(i);
   };
@@ -230,26 +227,7 @@ controls.appendChild(off);
 controls.appendChild(reset);
 controls.appendChild(fissa);
 
-/* CARICA PUZZLE */
-function loadPuzzle(p){
-  cells.forEach((c,i)=>{
-    let v=p[i];
-    if(v!="0"){
-      c.value=parseInt(v);
-      c.big.innerText=v;
-      c.fixed=true;
-    } else {
-      c.value=null;
-      c.big.innerText="";
-      c.fixed=false;
-    }
-  });
-}
-
-/* DIFFICOLTÀ */
-controls.appendChild(document.createElement("br"));
-
-function generateSudoku(difficulty){
+/* GENERATORE INTELLIGENTE */
 
 function isValid(grid, row, col, num){
   for(let x=0;x<9;x++){
@@ -257,26 +235,26 @@ function isValid(grid, row, col, num){
     if(grid[x][col]==num) return false;
   }
 
-  let startRow=row-row%3;
-  let startCol=col-col%3;
+  let sr=row-row%3;
+  let sc=col-col%3;
 
   for(let i=0;i<3;i++){
     for(let j=0;j<3;j++){
-      if(grid[i+startRow][j+startCol]==num) return false;
+      if(grid[i+sr][j+sc]==num) return false;
     }
   }
   return true;
 }
 
 function solve(grid){
-  for(let row=0;row<9;row++){
-    for(let col=0;col<9;col++){
-      if(grid[row][col]==0){
-        for(let num=1;num<=9;num++){
-          if(isValid(grid,row,col,num)){
-            grid[row][col]=num;
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      if(grid[r][c]==0){
+        for(let n=1;n<=9;n++){
+          if(isValid(grid,r,c,n)){
+            grid[r][c]=n;
             if(solve(grid)) return true;
-            grid[row][col]=0;
+            grid[r][c]=0;
           }
         }
         return false;
@@ -311,15 +289,14 @@ function countSolutions(grid){
   return count;
 }
 
-function generateSudoku(difficulty){
+function generateSudoku(diff){
 
   let grid = Array.from({length:9},()=>Array(9).fill(0));
-
   solve(grid);
 
   let holes = 40;
-  if(difficulty=="medium") holes=50;
-  if(difficulty=="hard") holes=60;
+  if(diff=="medium") holes=50;
+  if(diff=="hard") holes=60;
 
   let attempts = holes;
 
@@ -332,9 +309,8 @@ function generateSudoku(difficulty){
       grid[r][c]=0;
 
       let copy = JSON.parse(JSON.stringify(grid));
-      let solutions = countSolutions(copy);
 
-      if(solutions!=1){
+      if(countSolutions(copy)!=1){
         grid[r][c]=backup;
       }
 
@@ -344,20 +320,38 @@ function generateSudoku(difficulty){
 
   return grid.flat().join("");
 }
+
+/* DIFFICOLTÀ */
+controls.appendChild(document.createElement("br"));
+
 ["easy","medium","hard"].forEach(diff=>{
   let b=document.createElement("button");
   b.innerText=diff.toUpperCase();
 
   b.onclick=function(){
-    let puzzle = generateSudoku(diff);
-    loadPuzzle(puzzle);
+    let p = generateSudoku(diff);
+    loadPuzzle(p);
     gameOn=true;
   };
 
   controls.appendChild(b);
 });
 
-
+/* CARICA */
+function loadPuzzle(p){
+  cells.forEach((c,i)=>{
+    let v=p[i];
+    if(v!="0"){
+      c.value=parseInt(v);
+      c.big.innerText=v;
+      c.fixed=true;
+    } else {
+      c.value=null;
+      c.big.innerText="";
+      c.fixed=false;
+    }
+  });
+}
 
 /* SAVE */
 function saveGame(){

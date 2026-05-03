@@ -251,52 +251,101 @@ controls.appendChild(document.createElement("br"));
 
 function generateSudoku(difficulty){
 
-  // soluzione base (valida)
-  let base = [
-    "123456789",
-    "456789123",
-    "789123456",
-    "214365897",
-    "365897214",
-    "897214365",
-    "531642978",
-    "642978531",
-    "978531642"
-  ];
-
-  // mescola righe
-  base.sort(() => Math.random() - 0.5);
-
-  let grid = base.join("").split("");
-
-  // rimuovi numeri in base alla difficoltà
-  let holes = 40; // easy
-
-  if(difficulty === "medium") holes = 50;
-  if(difficulty === "hard") holes = 60;
-
-  for(let i=0;i<holes;i++){
-    let idx = Math.floor(Math.random()*81);
-    grid[idx] = "0";
+function isValid(grid, row, col, num){
+  for(let x=0;x<9;x++){
+    if(grid[row][x]==num) return false;
+    if(grid[x][col]==num) return false;
   }
 
-  return grid.join("");
+  let startRow=row-row%3;
+  let startCol=col-col%3;
+
+  for(let i=0;i<3;i++){
+    for(let j=0;j<3;j++){
+      if(grid[i+startRow][j+startCol]==num) return false;
+    }
+  }
+  return true;
 }
 
-controls.appendChild(document.createElement("br"));
+function solve(grid){
+  for(let row=0;row<9;row++){
+    for(let col=0;col<9;col++){
+      if(grid[row][col]==0){
 
-["easy","medium","hard"].forEach(diff=>{
-  let b=document.createElement("button");
-  b.innerText=diff.toUpperCase();
+        for(let num=1;num<=9;num++){
+          if(isValid(grid,row,col,num)){
+            grid[row][col]=num;
 
-  b.onclick=function(){
-    let puzzle = generateSudoku(diff);
-    loadPuzzle(puzzle);
-    gameOn=true;
-  };
+            if(solve(grid)) return true;
 
-  controls.appendChild(b);
-});
+            grid[row][col]=0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function countSolutions(grid){
+  let count=0;
+
+  function solveCount(g){
+    for(let r=0;r<9;r++){
+      for(let c=0;c<9;c++){
+        if(g[r][c]==0){
+          for(let n=1;n<=9;n++){
+            if(isValid(g,r,c,n)){
+              g[r][c]=n;
+              solveCount(g);
+              g[r][c]=0;
+            }
+          }
+          return;
+        }
+      }
+    }
+    count++;
+  }
+
+  solveCount(JSON.parse(JSON.stringify(grid)));
+  return count;
+}
+
+function generateSudoku(difficulty){
+
+  let grid = Array.from({length:9},()=>Array(9).fill(0));
+
+  solve(grid);
+
+  let holes = 40;
+  if(difficulty=="medium") holes=50;
+  if(difficulty=="hard") holes=60;
+
+  let attempts = holes;
+
+  while(attempts>0){
+    let r=Math.floor(Math.random()*9);
+    let c=Math.floor(Math.random()*9);
+
+    if(grid[r][c]!=0){
+      let backup=grid[r][c];
+      grid[r][c]=0;
+
+      let copy = JSON.parse(JSON.stringify(grid));
+      let solutions = countSolutions(copy);
+
+      if(solutions!=1){
+        grid[r][c]=backup;
+        attempts--;
+      }
+    }
+  }
+
+  return grid.flat().join("");
+}
 
 
 /* SAVE */

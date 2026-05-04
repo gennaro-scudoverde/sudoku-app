@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192x192.png">
 <link rel="apple-touch-icon" href="icon-192x192.png">
 <meta name="theme-color" content="#4CAF50">
@@ -31,7 +31,6 @@ body{
   position:relative;
 }
 
-/* bordi */
 .cell:nth-child(3n){border-right:3px solid black;}
 .cell:nth-child(9n+1){border-left:3px solid black;}
 .cell:nth-child(n+19):nth-child(-n+27),
@@ -70,7 +69,6 @@ body{
   justify-content:center;
 }
 
-/* bottoni */
 button{
   padding:6px 8px;
   border-radius:6px;
@@ -79,13 +77,11 @@ button{
   font-size:16px;
 }
 
-
 .numPad{display:flex;justify-content:center;}
 .numBtn{background:#fff3cd;}
 .ctrlBtn{background:#ffe0b2;}
 .mainBtn{background:#c8e6c9;}
 .diffBtn{background:#bbdefb;}
-
 </style>
 </head>
 
@@ -107,7 +103,6 @@ let inTest=false;
 
 /* CREA CELLE */
 for(let i=0;i<81;i++){
-
   let cell=document.createElement("div");
   cell.className="cell";
 
@@ -139,7 +134,6 @@ for(let i=0;i<81;i++){
   });
 
   cell.onclick=function(){
-
     let c=cells[i];
 
     if(selectedIndex===i && c.value && !c.fixed){
@@ -159,7 +153,6 @@ for(let i=0;i<81;i++){
 
 /* VALIDAZIONE */
 function isValid(index,num){
-
   let row=Math.floor(index/9);
   let col=index%9;
 
@@ -181,16 +174,14 @@ function isValid(index,num){
   return true;
 }
 
-/* HIGHLIGHT SOLO NOTE */
+/* HIGHLIGHT */
 function highlight(i){
-
   cells.forEach(c=>{
     c.el.classList.remove("selected");
     c.noteEls.forEach(n=>n.classList.remove("noteSame"));
   });
 
   let val=cells[i].value;
-
   cells[i].el.classList.add("selected");
 
   if(!val) return;
@@ -204,14 +195,12 @@ function highlight(i){
 
 /* RECALC */
 function recalc(){
-
   cells.forEach(c=>{
     c.notes.style.display=c.value?"none":"grid";
     c.noteEls.forEach(n=>n.style.visibility="visible");
   });
 
   for(let i=0;i<81;i++){
-
     let v=cells[i].value;
     if(!v) continue;
 
@@ -238,94 +227,8 @@ function recalc(){
   }
 }
 
-/* NUMERI */
-let pad=document.createElement("div");
-pad.className="numPad";
-
-for(let n=1;n<=9;n++){
-
-  let b=document.createElement("button");
-  b.innerText=n;
-  b.className="numBtn";
-
-  b.onclick=function(){
-
-    if(selectedIndex===-1) return;
-
-    let c=cells[selectedIndex];
-    if(c.fixed) return;
-
-    if(c.value===n){
-      c.value=null;
-      c.big.innerText="";
-    }else{
-      if(!isValid(selectedIndex,n)){
-        alert("Mossa non valida");
-        return;
-      }
-      c.value=n;
-      c.big.innerText=n;
-    }
-
-    recalc();
-    highlight(selectedIndex);
-  };
-
-  pad.appendChild(b);
-}
-
-controls.appendChild(pad);
-
-/* BOTTONI */
-function btn(t,cls,fn){
-  let b=document.createElement("button");
-  b.innerText=t;
-  b.className=cls;
-  b.onclick=fn;
-  return b;
-}
-
-controls.appendChild(btn("RESET","ctrlBtn",()=>{
-  cells.forEach(c=>{
-    c.value=null;
-    c.fixed=false;
-    c.big.innerText="";
-  });
-  recalc();
-}));
-
-controls.appendChild(btn("FISSA","ctrlBtn",()=>{
-  cells.forEach(c=>{if(c.value)c.fixed=true;});
-}));
-
-controls.appendChild(btn("PROVA","ctrlBtn",()=>{
-  if(!inTest){
-    savedState=cells.map(c=>c.value);
-    inTest=true;
-  }else{
-    cells.forEach((c,i)=>{
-      c.value=savedState[i];
-      c.big.innerText=c.value||"";
-    });
-    recalc();
-    inTest=false;
-  }
-}));
-
-controls.appendChild(document.createElement("br"));
-
-controls.appendChild(btn("ON","mainBtn",loadGame));
-controls.appendChild(btn("OFF","mainBtn",saveGame));
-
-controls.appendChild(document.createElement("br"));
-
-controls.appendChild(btn("EASY","diffBtn",()=>generate(35)));
-controls.appendChild(btn("MEDIUM","diffBtn",()=>generate(45)));
-controls.appendChild(btn("HARD","diffBtn",()=>generate(55)));
-
-/* GENERATORE */
+/* GENERATORE (uguale al tuo) */
 function generate(empty){
-
   let grid=new Array(81).fill(0);
 
   function valid(i,n){
@@ -349,7 +252,6 @@ function generate(empty){
 
   function fill(i){
     if(i===81) return true;
-
     let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
 
     for(let n of nums){
@@ -388,27 +290,14 @@ function generate(empty){
   recalc();
 }
 
-<script>
-
 /* SAVE */
 function saveGame(){
-
   let data=cells.map(c=>({v:c.value,f:c.fixed}));
   localStorage.setItem("sudoku",JSON.stringify(data));
-
-  cells.forEach(c=>{
-    c.value=null;
-    c.fixed=false;
-    c.big.innerText="";
-  });
-
-  selectedIndex=-1;
-  recalc();
 }
 
 /* LOAD */
 function loadGame(){
-
   let data=JSON.parse(localStorage.getItem("sudoku"));
   if(!data) return;
 
@@ -418,29 +307,19 @@ function loadGame(){
     c.big.innerText=c.value||"";
   });
 
-  selectedIndex=-1;
   recalc();
 }
 
+/* AVVIO */
 recalc();
 
-// SERVICE WORKER (UNA SOLA VOLTA!)
+/* SERVICE WORKER */
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./service-worker.js")
     .then(() => console.log("Service Worker attivo"))
     .catch(err => console.log("Errore SW:", err));
 }
 
-</script>
-
-
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js")
-
-    .then(() => console.log("Service Worker attivo"))
-    .catch(err => console.log("Errore SW:", err));
-}
 </script>
 
 </body>

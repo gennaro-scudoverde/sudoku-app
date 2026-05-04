@@ -1,11 +1,39 @@
-self.addEventListener("install", e => {
-  self.skipWaiting();
+const CACHE_NAME = "sudoku-app-v1";
+
+const urlsToCache = [
+  "/sudoku-app/",
+  "/sudoku-app/index.html",
+  "/sudoku-app/style.css",
+  "/sudoku-app/script.js",
+  "/sudoku-app/manifest.json",
+  "/sudoku-app/icon-192x192.png",
+  "/sudoku-app/icon-512x512.png"
+];
+
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
 });
 
-self.addEventListener("activate", e => {
-  console.log("Service Worker attivo");
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(
+        names.map(name => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      )
+    )
+  );
 });
 
-self.addEventListener("fetch", e => {
-  e.respondWith(fetch(e.request));
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+  );
 });

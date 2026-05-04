@@ -422,6 +422,13 @@ function loadGame(){
 
 recalc();
 
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sudoku-app/service-worker.js")
+    .then(() => console.log("Service Worker attivo"))
+    .catch(err => console.log("Errore SW:", err));
+}
 </script>
+
 </body>
 </html>

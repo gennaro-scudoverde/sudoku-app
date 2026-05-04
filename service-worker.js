@@ -1,19 +1,21 @@
-const CACHE_NAME = "sudoku-app-v3";
+const CACHE_NAME = "sudoku-app-v4";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
- return cache.addAll([
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon-192x192.png",
-  "./icon-512x512.png"
-]);
-
-
+      return cache.addAll([
+        "./",
+        "./index.html",
+        "./manifest.json",
+        "./icon-192x192.png",
+        "./icon-512x512.png"
+      ]);
     })
   );
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener("fetch", event => {

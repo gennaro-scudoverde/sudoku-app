@@ -388,6 +388,8 @@ function generate(empty){
   recalc();
 }
 
+<script>
+
 /* SAVE */
 function saveGame(){
 
@@ -403,7 +405,6 @@ function saveGame(){
   selectedIndex=-1;
   recalc();
 }
-<script>
 
 /* LOAD */
 function loadGame(){
@@ -423,7 +424,7 @@ function loadGame(){
 
 recalc();
 
-// SERVICE WORKER
+// SERVICE WORKER (UNA SOLA VOLTA!)
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./service-worker.js")
     .then(() => console.log("Service Worker attivo"))
@@ -431,6 +432,7 @@ if ("serviceWorker" in navigator) {
 }
 
 </script>
+
 
 <script>
 if ("serviceWorker" in navigator) {

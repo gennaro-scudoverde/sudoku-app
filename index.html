@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192x192.png">
 <link rel="apple-touch-icon" href="icon-192x192.png">
@@ -227,7 +228,90 @@ function recalc(){
   }
 }
 
-/* GENERATORE (uguale al tuo) */
+/* NUMPAD */
+let pad=document.createElement("div");
+pad.className="numPad";
+
+for(let n=1;n<=9;n++){
+  let b=document.createElement("button");
+  b.innerText=n;
+  b.className="numBtn";
+
+  b.onclick=function(){
+    if(selectedIndex===-1) return;
+
+    let c=cells[selectedIndex];
+    if(c.fixed) return;
+
+    if(c.value===n){
+      c.value=null;
+      c.big.innerText="";
+    }else{
+      if(!isValid(selectedIndex,n)){
+        alert("Mossa non valida");
+        return;
+      }
+      c.value=n;
+      c.big.innerText=n;
+    }
+
+    recalc();
+    highlight(selectedIndex);
+  };
+
+  pad.appendChild(b);
+}
+
+controls.appendChild(pad);
+
+/* BOTTONI */
+function btn(t,cls,fn){
+  let b=document.createElement("button");
+  b.innerText=t;
+  b.className=cls;
+  b.onclick=fn;
+  return b;
+}
+
+controls.appendChild(btn("RESET","ctrlBtn",()=>{
+  cells.forEach(c=>{
+    c.value=null;
+    c.fixed=false;
+    c.big.innerText="";
+  });
+  recalc();
+}));
+
+controls.appendChild(btn("FISSA","ctrlBtn",()=>{
+  cells.forEach(c=>{if(c.value)c.fixed=true;});
+}));
+
+controls.appendChild(btn("PROVA","ctrlBtn",()=>{
+  if(!inTest){
+    savedState=cells.map(c=>c.value);
+    inTest=true;
+  }else{
+    cells.forEach((c,i)=>{
+      c.value=savedState[i];
+      c.big.innerText=c.value||"";
+    });
+    recalc();
+    inTest=false;
+  }
+}));
+
+controls.appendChild(document.createElement("br"));
+
+controls.appendChild(btn("ON","mainBtn",loadGame));
+controls.appendChild(btn("OFF","mainBtn",saveGame));
+
+controls.appendChild(document.createElement("br"));
+
+controls.appendChild(btn("EASY","diffBtn",()=>generate(35)));
+controls.appendChild(btn("MEDIUM","diffBtn",()=>generate(45)));
+controls.appendChild(btn("HARD","diffBtn",()=>generate(55)));
+
+/* GENERATE */
 function generate(empty){
   let grid=new Array(81).fill(0);
 
@@ -252,6 +336,7 @@ function generate(empty){
 
   function fill(i){
     if(i===81) return true;
+
     let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
 
     for(let n of nums){
@@ -312,12 +397,11 @@ function loadGame(){
 
 /* AVVIO */
 recalc();
+loadGame();
 
 /* SERVICE WORKER */
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js")
-    .then(() => console.log("Service Worker attivo"))
-    .catch(err => console.log("Errore SW:", err));
+  navigator.serviceWorker.register("./service-worker.js");
 }
 
 </script>

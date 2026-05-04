@@ -1,4 +1,5 @@
-const CACHE_NAME = "sudoku-app-v1";
+const CACHE_NAME = "sudoku-app-v2";
+
 
 const urlsToCache = [
   "/sudoku-app/",

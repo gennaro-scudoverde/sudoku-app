@@ -3,12 +3,11 @@ const CACHE_NAME = "sudoku-app-v1";
 const urlsToCache = [
   "/sudoku-app/",
   "/sudoku-app/index.html",
-  "/sudoku-app/style.css",
-  "/sudoku-app/script.js",
   "/sudoku-app/manifest.json",
   "/sudoku-app/icon-192x192.png",
   "/sudoku-app/icon-512x512.png"
 ];
+
 
 self.addEventListener("install", event => {
   event.waitUntil(

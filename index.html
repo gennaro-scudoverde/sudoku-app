@@ -2,46 +2,52 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192x192.png">
 <link rel="apple-touch-icon" href="icon-192x192.png">
 <meta name="theme-color" content="#4CAF50">
-
 <title>Sudoku</title>
-
 <style>
+*{box-sizing:border-box;}
 body{
   margin:0;
   text-align:center;
   font-family:Arial;
   background:#f4f6f8;
+  user-select:none;
 }
+h2{margin:10px 0;color:#2e7d32;}
 
 #grid{
   display:grid;
   grid-template-columns:repeat(9,1fr);
   width:95vw;
-  max-width:500px;
-  margin:20px auto;
+  max-width:450px;
+  margin:8px auto;
+  border:3px solid #222;
 }
 
 .cell{
   aspect-ratio:1;
   border:1px solid #999;
   position:relative;
+  cursor:pointer;
+  transition:background 0.1s;
 }
 
-.cell:nth-child(3n){border-right:3px solid black;}
-.cell:nth-child(9n+1){border-left:3px solid black;}
-.cell:nth-child(n+19):nth-child(-n+27),
-.cell:nth-child(n+46):nth-child(-n+54){
-  border-bottom:3px solid black;
-}
-.cell:nth-child(-n+9){border-top:3px solid black;}
+/* Bordi 3x3 verticali */
+.cell:nth-child(3n){border-right:3px solid #222;}
+.cell:nth-child(9n){border-right:3px solid #222;}
 
-.selected{background:#ffe9a8;}
-.noteSame{background:#ffd54f;}
+/* Bordi 3x3 orizzontali */
+.cell:nth-child(n+19):nth-child(-n+27){border-bottom:3px solid #222;}
+.cell:nth-child(n+46):nth-child(-n+54){border-bottom:3px solid #222;}
+
+.cell-normal{background:#fff;}
+.cell-selected{background:#ffe082;}
+.cell-related{background:#e8f5e9;}
+.cell-same{background:#fff9c4;}
+.cell-test{background:#fce4ec;}
 
 .big{
   position:absolute;
@@ -50,9 +56,13 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:22px;
+  font-size:clamp(14px,4vw,24px);
   font-weight:bold;
 }
+.big.fixed{color:#1a237e;}
+.big.user{color:#2e7d32;}
+.big.test{color:#c62828;}
+.big.invalid{color:#f44336;}
 
 .notes{
   position:absolute;
@@ -60,58 +70,89 @@ body{
   height:100%;
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  font-size:10px;
-  color:#c44;
+  grid-template-rows:repeat(3,1fr);
 }
-
 .notes div{
   display:flex;
   align-items:center;
   justify-content:center;
+  font-size:clamp(6px,2vw,10px);
+  color:#c44;
+  font-weight:bold;
 }
+
+/* CONTROLLI */
+#controls{max-width:450px;margin:0 auto;padding:4px;}
+
+.row{display:flex;justify-content:center;flex-wrap:wrap;margin:3px 0;}
 
 button{
-  padding:6px 8px;
-  border-radius:6px;
+  padding:7px 10px;
+  border-radius:8px;
   border:2px solid #555;
   margin:3px;
-  font-size:16px;
+  font-size:clamp(13px,3.5vw,17px);
+  font-weight:bold;
+  cursor:pointer;
+  transition:all 0.15s;
+  min-width:36px;
+}
+button:active{
+  transform:scale(0.92);
+  filter:brightness(0.85);
 }
 
-.numPad{display:flex;justify-content:center;}
-.numBtn{background:#fff3cd;}
-.ctrlBtn{background:#ffe0b2;}
-.mainBtn{background:#c8e6c9;}
-.diffBtn{background:#bbdefb;}
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-6px);}
+  80%{transform:translateX(6px);}
+}
+.shake{animation:shake 0.4s ease;}
+
+.numBtn{background:#fff3cd;border-color:#f9a825;}
+.numBtn.active{background:#f9a825;color:#fff;}
+.ctrlBtn{background:#ffe0b2;border-color:#ef6c00;}
+.mainBtn{background:#c8e6c9;border-color:#2e7d32;}
+.diffBtn{background:#bbdefb;border-color:#1565c0;}
+.testEndBtn{background:#f8bbd0;border-color:#c62828;}
+.mainBtn.on-active{background:#2e7d32;color:#fff;}
+
+#status{
+  font-size:13px;
+  color:#555;
+  margin:4px 0;
+  min-height:18px;
+}
 </style>
 </head>
-
 <body>
 
-<h2>Sudoku</h2>
+<h2>Sudoku Mnemo</h2>
 <div id="grid"></div>
+<div id="status"></div>
 <div id="controls"></div>
 
 <script>
-
-let grid=document.getElementById("grid");
-let controls=document.getElementById("controls");
+const gridEl=document.getElementById("grid");
+const controlsEl=document.getElementById("controls");
+const statusEl=document.getElementById("status");
 
 let cells=[];
 let selectedIndex=-1;
 let savedState=null;
 let inTest=false;
+let gameOn=false;
 
-/* CREA CELLE */
+/* ---- CREA CELLE ---- */
 for(let i=0;i<81;i++){
   let cell=document.createElement("div");
-  cell.className="cell";
+  cell.className="cell cell-normal";
 
   let notes=document.createElement("div");
   notes.className="notes";
-
   let noteEls=[];
-
   for(let n=1;n<=9;n++){
     let d=document.createElement("div");
     d.innerText=n;
@@ -125,76 +166,90 @@ for(let i=0;i<81;i++){
   cell.appendChild(notes);
   cell.appendChild(big);
 
-  cells.push({
-    el:cell,
-    value:null,
-    fixed:false,
-    big:big,
-    notes:notes,
-    noteEls:noteEls
-  });
+  cells.push({el:cell,value:null,fixed:false,big,notes,noteEls});
 
-  cell.onclick=function(){
-    let c=cells[i];
-
-    if(selectedIndex===i && c.value && !c.fixed){
-      c.value=null;
-      c.big.innerText="";
-      recalc();
-      highlight(i);
-      return;
-    }
-
-    selectedIndex=i;
-    highlight(i);
-  };
-
-  grid.appendChild(cell);
+  cell.addEventListener("click",()=>selectCell(i));
+  gridEl.appendChild(cell);
 }
 
-/* VALIDAZIONE */
-function isValid(index,num){
-  let row=Math.floor(index/9);
-  let col=index%9;
+/* ---- SELEZIONE ---- */
+function selectCell(i){
+  let c=cells[i];
+  // doppio click su cella con valore non fisso = cancella
+  if(selectedIndex===i && c.value && !c.fixed && !inTest){
+    c.value=null;
+    c.big.innerText="";
+    c.big.className="big";
+    recalc();
+    highlight(i);
+    return;
+  }
+  selectedIndex=i;
+  highlight(i);
+  updateNumPad();
+}
 
-  for(let i=row*9;i<row*9+9;i++)
-    if(i!==index && cells[i].value===num) return false;
+/* ---- HIGHLIGHT ---- */
+function highlight(idx){
+  let row=Math.floor(idx/9);
+  let col=idx%9;
+  let sr=Math.floor(row/3)*3;
+  let sc=Math.floor(col/3)*3;
+  let val=cells[idx].value;
 
-  for(let i=col;i<81;i+=9)
-    if(i!==index && cells[i].value===num) return false;
+  cells.forEach((c,i)=>{
+    let r=Math.floor(i/9);
+    let co=i%9;
+    let inBox=(r>=sr&&r<sr+3&&co>=sc&&co<sc+3);
+    let related=(r===row||co===col||inBox);
 
+    if(i===idx){
+      c.el.className="cell cell-selected";
+    }else if(val && c.value===val){
+      c.el.className="cell cell-same";
+    }else if(related){
+      c.el.className="cell cell-related";
+    }else{
+      c.el.className="cell cell-normal";
+    }
+
+    // note highlight
+    c.noteEls.forEach((n,ni)=>{
+      n.style.background="";
+      if(val && ni===val-1 && !c.value){
+        n.style.background="#ffe082";
+      }
+    });
+  });
+}
+
+function clearHighlight(){
+  cells.forEach(c=>{
+    c.el.className="cell cell-normal";
+    c.noteEls.forEach(n=>n.style.background="");
+  });
+}
+
+/* ---- VALIDAZIONE ---- */
+function isValid(idx,num){
+  let row=Math.floor(idx/9);
+  let col=idx%9;
   let sr=Math.floor(row/3)*3;
   let sc=Math.floor(col/3)*3;
 
+  for(let i=row*9;i<row*9+9;i++)
+    if(i!==idx&&cells[i].value===num) return false;
+  for(let i=col;i<81;i+=9)
+    if(i!==idx&&cells[i].value===num) return false;
   for(let r=sr;r<sr+3;r++)
     for(let c=sc;c<sc+3;c++){
       let i=r*9+c;
-      if(i!==index && cells[i].value===num) return false;
+      if(i!==idx&&cells[i].value===num) return false;
     }
-
   return true;
 }
 
-/* HIGHLIGHT */
-function highlight(i){
-  cells.forEach(c=>{
-    c.el.classList.remove("selected");
-    c.noteEls.forEach(n=>n.classList.remove("noteSame"));
-  });
-
-  let val=cells[i].value;
-  cells[i].el.classList.add("selected");
-
-  if(!val) return;
-
-  cells.forEach(c=>{
-    if(!c.value){
-      c.noteEls[val-1].classList.add("noteSame");
-    }
-  });
-}
-
-/* RECALC */
+/* ---- RECALC NOTES ---- */
 function recalc(){
   cells.forEach(c=>{
     c.notes.style.display=c.value?"none":"grid";
@@ -204,147 +259,197 @@ function recalc(){
   for(let i=0;i<81;i++){
     let v=cells[i].value;
     if(!v) continue;
-
     let row=Math.floor(i/9);
     let col=i%9;
-
-    for(let j=row*9;j<row*9+9;j++)
-      if(!cells[j].value)
-        cells[j].noteEls[v-1].style.visibility="hidden";
-
-    for(let j=col;j<81;j+=9)
-      if(!cells[j].value)
-        cells[j].noteEls[v-1].style.visibility="hidden";
-
     let sr=Math.floor(row/3)*3;
     let sc=Math.floor(col/3)*3;
 
+    for(let j=row*9;j<row*9+9;j++)
+      if(!cells[j].value) cells[j].noteEls[v-1].style.visibility="hidden";
+    for(let j=col;j<81;j+=9)
+      if(!cells[j].value) cells[j].noteEls[v-1].style.visibility="hidden";
     for(let r=sr;r<sr+3;r++)
       for(let c=sc;c<sc+3;c++){
         let idx=r*9+c;
-        if(!cells[idx].value)
-          cells[idx].noteEls[v-1].style.visibility="hidden";
+        if(!cells[idx].value) cells[idx].noteEls[v-1].style.visibility="hidden";
       }
   }
 }
 
-/* NUMPAD */
-let pad=document.createElement("div");
-pad.className="numPad";
+/* ---- NUMPAD ---- */
+let numBtns=[];
+let padRow=document.createElement("div");
+padRow.className="row";
 
 for(let n=1;n<=9;n++){
   let b=document.createElement("button");
   b.innerText=n;
   b.className="numBtn";
+  b.addEventListener("click",()=>insertNum(n,b));
+  padRow.appendChild(b);
+  numBtns.push(b);
+}
+controlsEl.appendChild(padRow);
 
-  b.onclick=function(){
-    if(selectedIndex===-1) return;
+function updateNumPad(){
+  if(selectedIndex===-1){numBtns.forEach(b=>b.classList.remove("active"));return;}
+  let v=cells[selectedIndex].value;
+  numBtns.forEach((b,i)=>b.classList.toggle("active",v===i+1));
+}
 
-    let c=cells[selectedIndex];
-    if(c.fixed) return;
+function insertNum(n,btn){
+  if(selectedIndex===-1){setStatus("Seleziona prima una casella");return;}
+  let c=cells[selectedIndex];
+  if(c.fixed){setStatus("Questa casella è fissa");return;}
 
-    if(c.value===n){
-      c.value=null;
-      c.big.innerText="";
-    }else{
-      if(!isValid(selectedIndex,n)){
-        alert("Mossa non valida");
-        return;
-      }
-      c.value=n;
-      c.big.innerText=n;
+  if(c.value===n){
+    c.value=null;
+    c.big.innerText="";
+    c.big.className="big";
+  }else{
+    if(!isValid(selectedIndex,n)){
+      setStatus("⚠️ Numero non valido in questa posizione");
+      // tremolio sulla cella
+      c.el.classList.add("shake");
+      setTimeout(()=>c.el.classList.remove("shake"),400);
+      return;
     }
-
-    recalc();
-    highlight(selectedIndex);
-  };
-
-  pad.appendChild(b);
+    c.value=n;
+    c.big.innerText=n;
+    c.big.className=inTest?"big test":"big user";
+  }
+  setStatus("");
+  recalc();
+  highlight(selectedIndex);
+  updateNumPad();
+  checkWin();
 }
 
-controls.appendChild(pad);
+/* ---- BOTTONI CONTROLLO ---- */
+let row1=document.createElement("div");
+row1.className="row";
 
-/* BOTTONI */
-function btn(t,cls,fn){
-  let b=document.createElement("button");
-  b.innerText=t;
-  b.className=cls;
-  b.onclick=fn;
-  return b;
-}
+// RESET
+let btnReset=makeBtn("RESET","ctrlBtn",resetGame);
 
-controls.appendChild(btn("RESET","ctrlBtn",()=>{
+function resetGame(){
   cells.forEach(c=>{
     c.value=null;
     c.fixed=false;
     c.big.innerText="";
+    c.big.className="big";
+    c.notes.style.display="grid";
+    c.noteEls.forEach(n=>{
+      n.style.visibility="visible";
+      n.style.display="flex";
+    });
+  });
+  selectedIndex=-1;
+  inTest=false;
+  savedState=null;
+  try{localStorage.removeItem("sudokuMnemo");}catch(e){}
+  clearHighlight();
+  setStatus("Partita azzerata — scegli un livello o inserisci i numeri");
+}
+
+// FISSA
+let btnFissa=makeBtn("FISSA","ctrlBtn",()=>{
+  cells.forEach(c=>{
+    if(c.value){c.fixed=true;c.big.className="big fixed";}
+  });
+  setStatus("Numeri fissati");
+});
+
+// PROVA
+let btnProva=makeBtn("PROVA","ctrlBtn",()=>{
+  if(!inTest){
+    savedState=cells.map(c=>({v:c.value,f:c.fixed}));
+    inTest=true;
+    btnProva.style.background="#ef9a9a";
+    setStatus("🔴 Modalità PROVA attiva");
+  }
+});
+
+// PROVA END
+let btnProvaEnd=makeBtn("PROVA END","testEndBtn",()=>{
+  if(!inTest){setStatus("Non sei in modalità prova");return;}
+  cells.forEach((c,i)=>{
+    c.value=savedState[i].v;
+    c.fixed=savedState[i].f;
+    c.big.innerText=c.value||"";
+    c.big.className=c.fixed?"big fixed":c.value?"big user":"big";
   });
   recalc();
-}));
+  inTest=false;
+  savedState=null;
+  btnProva.style.background="";
+  setStatus("↩️ Tornato alla posizione prima della prova");
+  if(selectedIndex!==-1) highlight(selectedIndex);
+});
 
-controls.appendChild(btn("FISSA","ctrlBtn",()=>{
-  cells.forEach(c=>{if(c.value)c.fixed=true;});
-}));
+row1.appendChild(btnReset);
+row1.appendChild(btnFissa);
+row1.appendChild(btnProva);
+row1.appendChild(btnProvaEnd);
+controlsEl.appendChild(row1);
 
-controls.appendChild(btn("PROVA","ctrlBtn",()=>{
-  if(!inTest){
-    savedState=cells.map(c=>c.value);
-    inTest=true;
-  }else{
-    cells.forEach((c,i)=>{
-      c.value=savedState[i];
-      c.big.innerText=c.value||"";
-    });
-    recalc();
-    inTest=false;
-  }
-}));
+/* ON / OFF */
+let row2=document.createElement("div");
+row2.className="row";
 
-controls.appendChild(document.createElement("br"));
+let btnOn=makeBtn("ON","mainBtn",()=>{
+  loadGame();
+  btnOn.classList.add("on-active");
+  setStatus("▶️ Partita caricata");
+});
 
-controls.appendChild(btn("ON","mainBtn",loadGame));
-controls.appendChild(btn("OFF","mainBtn",saveGame));
+let btnOff=makeBtn("OFF","mainBtn",()=>{
+  saveGame();
+  btnOn.classList.remove("on-active");
+  // torna alla schermata iniziale
+  cells.forEach(c=>{
+    c.value=null;c.fixed=false;
+    c.big.innerText="";c.big.className="big";
+  });
+  selectedIndex=-1;
+  inTest=false;savedState=null;
+  clearHighlight();recalc();
+  setStatus("💾 Partita salvata — premi ON per riprendere");
+});
 
-controls.appendChild(document.createElement("br"));
+row2.appendChild(btnOn);
+row2.appendChild(btnOff);
+controlsEl.appendChild(row2);
 
-controls.appendChild(btn("EASY","diffBtn",()=>generate(35)));
-controls.appendChild(btn("MEDIUM","diffBtn",()=>generate(45)));
-controls.appendChild(btn("HARD","diffBtn",()=>generate(55)));
+/* DIFFICOLTÀ */
+let row3=document.createElement("div");
+row3.className="row";
+row3.appendChild(makeBtn("EASY","diffBtn",()=>generate(30)));
+row3.appendChild(makeBtn("MEDIUM","diffBtn",()=>generate(45)));
+row3.appendChild(makeBtn("HARD","diffBtn",()=>generate(55)));
+controlsEl.appendChild(row3);
 
-/* GENERATE */
+/* ---- GENERA ---- */
 function generate(empty){
-  let grid=new Array(81).fill(0);
+  let g=new Array(81).fill(0);
 
   function valid(i,n){
-    let r=Math.floor(i/9);
-    let c=i%9;
-
+    let r=Math.floor(i/9),c=i%9;
     for(let x=0;x<9;x++){
-      if(grid[r*9+x]===n) return false;
-      if(grid[x*9+c]===n) return false;
+      if(g[r*9+x]===n||g[x*9+c]===n) return false;
     }
-
-    let sr=Math.floor(r/3)*3;
-    let sc=Math.floor(c/3)*3;
-
+    let sr=Math.floor(r/3)*3,sc=Math.floor(c/3)*3;
     for(let rr=sr;rr<sr+3;rr++)
       for(let cc=sc;cc<sc+3;cc++)
-        if(grid[rr*9+cc]===n) return false;
-
+        if(g[rr*9+cc]===n) return false;
     return true;
   }
 
   function fill(i){
     if(i===81) return true;
-
     let nums=[1,2,3,4,5,6,7,8,9].sort(()=>Math.random()-0.5);
-
     for(let n of nums){
-      if(valid(i,n)){
-        grid[i]=n;
-        if(fill(i+1)) return true;
-        grid[i]=0;
-      }
+      if(valid(i,n)){g[i]=n;if(fill(i+1))return true;g[i]=0;}
     }
     return false;
   }
@@ -354,57 +459,72 @@ function generate(empty){
   let holes=empty;
   while(holes>0){
     let i=Math.floor(Math.random()*81);
-    if(grid[i]!==0){
-      grid[i]=0;
-      holes--;
-    }
+    if(g[i]!==0){g[i]=0;holes--;}
   }
 
   cells.forEach((c,i)=>{
-    if(grid[i]){
-      c.value=grid[i];
-      c.big.innerText=grid[i];
-      c.fixed=true;
-    }else{
-      c.value=null;
-      c.big.innerText="";
-      c.fixed=false;
-    }
+    c.value=g[i]||null;
+    c.fixed=g[i]!==0;
+    c.big.innerText=g[i]||"";
+    c.big.className=g[i]?"big fixed":"big";
   });
 
-  recalc();
+  selectedIndex=-1;
+  inTest=false;savedState=null;
+  clearHighlight();recalc();
+  setStatus("Buona fortuna! 🎯");
 }
 
-/* SAVE */
+/* ---- SAVE / LOAD ---- */
 function saveGame(){
   let data=cells.map(c=>({v:c.value,f:c.fixed}));
-  localStorage.setItem("sudoku",JSON.stringify(data));
+  try{localStorage.setItem("sudokuMnemo",JSON.stringify(data));}
+  catch(e){setStatus("⚠️ Salvataggio non disponibile");}
 }
 
-/* LOAD */
 function loadGame(){
-  let data=JSON.parse(localStorage.getItem("sudoku"));
-  if(!data) return;
-
-  cells.forEach((c,i)=>{
-    c.value=data[i].v;
-    c.fixed=data[i].f;
-    c.big.innerText=c.value||"";
-  });
-
-  recalc();
+  try{
+    let data=JSON.parse(localStorage.getItem("sudokuMnemo"));
+    if(!data){setStatus("Nessuna partita salvata");return;}
+    cells.forEach((c,i)=>{
+      c.value=data[i].v;
+      c.fixed=data[i].f;
+      c.big.innerText=c.value||"";
+      c.big.className=c.fixed?"big fixed":c.value?"big user":"big";
+    });
+    selectedIndex=-1;
+    clearHighlight();recalc();
+  }catch(e){setStatus("Nessuna partita salvata");}
 }
 
-/* AVVIO */
-recalc();
-loadGame();
+/* ---- WIN ---- */
+function checkWin(){
+  let full=cells.every(c=>c.value!==null);
+  if(!full) return;
+  let valid=true;
+  for(let i=0;i<81;i++){
+    if(!isValid(i,cells[i].value)){valid=false;break;}
+  }
+  if(valid) setTimeout(()=>alert("🎉 Complimenti! Hai risolto il Sudoku!"),100);
+}
 
-/* SERVICE WORKER */
-if ("serviceWorker" in navigator) {
+/* ---- STATUS ---- */
+function setStatus(msg){statusEl.innerText=msg;}
+
+/* ---- UTILITY ---- */
+function makeBtn(t,cls,fn){
+  let b=document.createElement("button");
+  b.innerText=t;b.className=cls;
+  b.addEventListener("click",fn);
+  return b;
+}
+
+/* ---- AVVIO ---- */
+recalc();
+
+if("serviceWorker" in navigator){
   navigator.serviceWorker.register("./service-worker.js");
 }
-
 </script>
-
 </body>
 </html>
